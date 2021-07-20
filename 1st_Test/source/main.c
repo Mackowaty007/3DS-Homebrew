@@ -24,14 +24,16 @@ int main(int argc, char* argv[]) {
 
 	// Create colors
 
-	u32 clrRec1 = C2D_Color32(0x6A, 0xFC, 0xA9, 0xFF);
+	u32 clrRec1    = C2D_Color32(0x6A, 0xFC, 0xA9, 0xFF);
+    u32 EnemyColor = C2D_Color32(0xF0, 0x1F, 0x0F, 0xFF);
 
-	u32 clrClear = C2D_Color32(0x0F, 0x00, 0x0F, 0xFF);
+	u32 clrClear   = C2D_Color32(0x0F, 0x00, 0x0F, 0xFF);
 
     //declare variables
     int Score = -1;
     int Size = 10;
-    float Pos[2] = {(SCREEN_WIDTH-Size)/2 , (SCREEN_HEIGHT-Size)/2};
+    float EnemyPos[2] = {100,100};
+    float Pos[2]    = {(SCREEN_WIDTH-Size)/2 , (SCREEN_HEIGHT-Size)/2};
 
 	// Main loop
 	while (aptMainLoop())
@@ -44,18 +46,29 @@ int main(int argc, char* argv[]) {
 			break; // break in order to return to hbmenu
 
         u32 kHeld = hidKeysHeld();
-        if (kHeld & KEY_UP){
+        if (kHeld & KEY_DUP){
             Pos[1] --;
         }
-        if (kHeld & KEY_DOWN){
+        if (kHeld & KEY_DDOWN){
             Pos[1] ++;
         }
-        if (kHeld & KEY_LEFT){
+        if (kHeld & KEY_DLEFT){
             Pos[0] --;
         }
-        if (kHeld & KEY_RIGHT){
+        if (kHeld & KEY_DRIGHT){
             Pos[0] ++;
         }
+
+        //circle pad position
+        circlePosition pos;
+        hidCircleRead(&pos);
+
+        float float_posX = (float)pos.dx;
+        float float_posY = (float)pos.dy;
+
+        Pos[0] += float_posX/154;
+        Pos[1] -= float_posY/154;
+
 
 		// Render the scene
 		C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
@@ -63,8 +76,9 @@ int main(int argc, char* argv[]) {
 		C2D_SceneBegin(top);
 
 		C2D_DrawRectSolid(Pos[0], Pos[1],0,Size,Size, clrRec1);
+        C2D_DrawCircleSolid(EnemyPos[0],EnemyPos[1],0,Size/2,EnemyColor);
 
-        printf("\x1b[1;1HSCORE: %1.0i",Score);
+        //printf("\x1b[1;1HSCORE: %1.0i",Score);
 
 		C3D_FrameEnd(0);
 	}
@@ -74,4 +88,4 @@ int main(int argc, char* argv[]) {
 	C3D_Fini();
 	gfxExit();
 	return 0;
-}
+} 
