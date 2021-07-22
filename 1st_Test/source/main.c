@@ -34,6 +34,9 @@ int main(int argc, char* argv[]) {
     int Size = 10;
     float EnemyPos[2] = {100,100};
     float Pos[2]    = {(SCREEN_WIDTH-Size)/2 , (SCREEN_HEIGHT-Size)/2};
+    float Speed = 1.5f;
+
+    printf("\x1b[1;1HScore: %i", Score);
 
 	// Main loop
 	while (aptMainLoop())
@@ -66,8 +69,16 @@ int main(int argc, char* argv[]) {
         float float_posX = (float)pos.dx;
         float float_posY = (float)pos.dy;
 
-        Pos[0] += float_posX/154;
-        Pos[1] -= float_posY/154;
+        Pos[0] += float_posX/154 * Speed;
+        Pos[1] -= float_posY/154 * Speed;
+
+        //check collisions
+        if (Pos[0]+Size>EnemyPos[0]-Size/2 && Pos[0]<EnemyPos[0]+Size/2 && Pos[1]+Size>EnemyPos[1]-Size/2 && Pos[1]<EnemyPos[1]+Size/2){
+            Score ++;
+            EnemyPos[0] = rand() % SCREEN_WIDTH;
+            EnemyPos[1] = rand() % SCREEN_HEIGHT;
+            printf("\x1b[1;1HScore: %i    ", Score);
+        }
 
 
 		// Render the scene
@@ -77,8 +88,6 @@ int main(int argc, char* argv[]) {
 
 		C2D_DrawRectSolid(Pos[0], Pos[1],0,Size,Size, clrRec1);
         C2D_DrawCircleSolid(EnemyPos[0],EnemyPos[1],0,Size/2,EnemyColor);
-
-        //printf("\x1b[1;1HSCORE: %1.0i",Score);
 
 		C3D_FrameEnd(0);
 	}
