@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #define SCREEN_WIDTH  400
 #define SCREEN_HEIGHT 240
@@ -120,16 +121,16 @@ int main(int argc, char* argv[]){
         //left
         if(map[(int)Pos[1]/TILE_SIZE][(int)Pos[0]/TILE_SIZE] && map[(int)(Pos[1]+playerSize)/TILE_SIZE][(int)Pos[0]/TILE_SIZE]){
             Velocity[0] = 0;
-            Pos[0] += (Pos[0]/TILE_SIZE)-((int)Pos[0]/TILE_SIZE);
+            printf("%f \n",(Pos[0]/TILE_SIZE)-round(Pos[0]/TILE_SIZE));
+            Pos[0] -= (Pos[0]/TILE_SIZE)-round(Pos[0]/TILE_SIZE);
             isOnWall = 1;
-            //printf("%f \n",(Pos[0]/TILE_SIZE)-((int)Pos[0]/TILE_SIZE));
         }
         //right
         if(map[(int)Pos[1]/TILE_SIZE][(int)(Pos[0]+playerSize)/TILE_SIZE] && map[(int)(Pos[1]+playerSize)/TILE_SIZE][(int)(Pos[0]+playerSize)/TILE_SIZE]){
             Velocity[0] = 0;
-            Pos[0] -= ((Pos[0]+playerSize)/TILE_SIZE)-((int)(Pos[0]+playerSize)/TILE_SIZE);
+            printf("%f \n",(Pos[0]+playerSize)/TILE_SIZE-(int)(Pos[0]+playerSize)/TILE_SIZE);
+            Pos[0] -= (Pos[0]+playerSize)/TILE_SIZE-(int)(Pos[0]+playerSize)/TILE_SIZE;
             isOnWall = -1;
-            //printf("%f \n",((Pos[0]+playerSize)/TILE_SIZE)-((int)(Pos[0]+playerSize)/TILE_SIZE));
         }
         //up
         if(map[(int)Pos[1]/TILE_SIZE][(int)Pos[0]/TILE_SIZE] && map[(int)Pos[1]/TILE_SIZE][(int)(Pos[0]+playerSize)/TILE_SIZE]){
