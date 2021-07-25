@@ -1,4 +1,4 @@
-main.o: /home/mateusz/Desktop/3ds-Projects/Platform_game/source/main.c \
+main.o: /home/mateusz/Desktop/3ds-Projects/Platform_game/source/main.cpp \
  /opt/devkitpro/libctru/include/citro2d.h \
  /opt/devkitpro/libctru/include/citro3d.h \
  /opt/devkitpro/libctru/include/c3d/types.h \
