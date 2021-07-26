@@ -147,6 +147,9 @@ int main(int argc, char* argv[]){
         Pos[0] += Velocity[0];
         Pos[1] += Velocity[1];
 
+        cameraPos[0] = Pos[0] - SCREEN_WIDTH/2;
+        cameraPos[1] = Pos[1] - SCREEN_HEIGHT/2;
+
 
         //collisions
         isOnWall = 0;
