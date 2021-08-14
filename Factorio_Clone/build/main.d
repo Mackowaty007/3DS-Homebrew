@@ -103,7 +103,9 @@ main.o: /home/mateusz/Desktop/3ds-Projects/Factorio_Clone/source/main.cpp \
  /opt/devkitpro/libctru/include/c2d/sprite.h \
  /opt/devkitpro/libctru/include/c2d/text.h \
  /opt/devkitpro/libctru/include/c2d/font.h \
- /home/mateusz/Desktop/3ds-Projects/Factorio_Clone/source/WorldGeneration.h
+ /home/mateusz/Desktop/3ds-Projects/Factorio_Clone/source/WorldGeneration.h \
+ /home/mateusz/Desktop/3ds-Projects/Factorio_Clone/source/input.h \
+ /home/mateusz/Desktop/3ds-Projects/Factorio_Clone/source/render.h
 /opt/devkitpro/libctru/include/citro2d.h:
 /opt/devkitpro/libctru/include/citro3d.h:
 /opt/devkitpro/libctru/include/c3d/types.h:
@@ -209,3 +211,5 @@ main.o: /home/mateusz/Desktop/3ds-Projects/Factorio_Clone/source/main.cpp \
 /opt/devkitpro/libctru/include/c2d/text.h:
 /opt/devkitpro/libctru/include/c2d/font.h:
 /home/mateusz/Desktop/3ds-Projects/Factorio_Clone/source/WorldGeneration.h:
+/home/mateusz/Desktop/3ds-Projects/Factorio_Clone/source/input.h:
+/home/mateusz/Desktop/3ds-Projects/Factorio_Clone/source/render.h:
