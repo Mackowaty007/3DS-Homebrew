@@ -7,6 +7,7 @@
 #define SCREEN_WIDTH  400
 #define SCREEN_HEIGHT 240
 #define PLAYER_SIZE 5
+#define NUMBER_OF_SPRITES_IN_THE_GAME 6
 
 //sprite struct
 typedef struct
@@ -15,7 +16,7 @@ typedef struct
 } Sprite;
 
 static C2D_SpriteSheet spriteSheet;
-static Sprite sprites[2];
+static Sprite sprites[NUMBER_OF_SPRITES_IN_THE_GAME];
 
 int main(int argc, char* argv[])
 {
@@ -32,23 +33,21 @@ int main(int argc, char* argv[])
     if(!spriteSheet) svcBreak(USERBREAK_PANIC);
 
     //sprite init
-    //player
     Sprite* sprite = &sprites[0];
-    C2D_SpriteFromSheet(&sprite->spr,spriteSheet,0);
-    C2D_SpriteSetPos(&sprite->spr,100,100);
-    sprite = &sprites[1];
-    C2D_SpriteFromSheet(&sprite->spr,spriteSheet,1);
-    C2D_SpriteSetPos(&sprite->spr,120,100);
+    for(int i=0;i<NUMBER_OF_SPRITES_IN_THE_GAME;i++){
+        sprite = &sprites[i];
+        C2D_SpriteFromSheet(&sprite->spr,spriteSheet,i);
+    }
+
+
 
     //variables
-    int mapSize = 85;
+    int mapSize = 40;
     int gridSize = 10;
     float playerSpeed = 2;
     float cameraSpeed = 4;
     float playerPos[2] = {0,0};
     float cameraPos[2] = {0,0};
-    u32 PlayerColor = C2D_Color32(0x10,0x20,0xF0,0xFF);
-    u32 FloorColor = C2D_Color32(0x40,0x20,0x30,0xFF);
     u32 clrClear    = C2D_Color32(0xA0,0x90,0xF0,0xFF);
 
     #include "WorldGeneration.h"

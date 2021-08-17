@@ -4,3 +4,5 @@
 #define sprites_Grass_idx 0
 #define sprites_Water_idx 1
 #define sprites_PlayerSprite_idx 2
+#define sprites_ironOre_idx 3
+#define sprites_coperOre_idx 4

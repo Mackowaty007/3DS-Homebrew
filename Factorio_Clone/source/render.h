@@ -12,23 +12,50 @@ for(int y=cameraPos[1]/gridSize;y<(cameraPos[1]+SCREEN_HEIGHT)/gridSize;y++){
         if(x>=0 && y >=0 && x<mapSize && y<mapSize){
             switch(floorMap[y][x]){
                 case 0:
-                    FloorColor = C2D_Color32(0x40,0x20,0x30,0xFF);
+                    sprite = &sprites[0];
+                    C2D_SpriteSetPos(&sprite->spr,x*gridSize-cameraPos[0],y*gridSize-cameraPos[1]);
+                    C2D_DrawSprite(&sprites[0].spr);
                     break;
                 case 1:
-                    FloorColor = C2D_Color32(0x10,0x20,0x10,0xFF);
+                    sprite = &sprites[1];
+                    C2D_SpriteSetPos(&sprite->spr,x*gridSize-cameraPos[0],y*gridSize-cameraPos[1]);
+                    C2D_DrawSprite(&sprites[1].spr);
                     break;
-                default:
-                    FloorColor = C2D_Color32(0xFF,0x00,0x00,0xFF);
-                }
-            C2D_DrawRectSolid(x*gridSize-cameraPos[0],y*gridSize-cameraPos[1],0,gridSize,gridSize,FloorColor);
+                //default:
+            }
         }
     }
 }
-C2D_DrawRectSolid(playerPos[0]-cameraPos[0],playerPos[1]-cameraPos[1],0,PLAYER_SIZE,PLAYER_SIZE, PlayerColor); 
+//render minerals
+for(int y=cameraPos[1]/gridSize;y<(cameraPos[1]+SCREEN_HEIGHT)/gridSize;y++){
+    for(int x=(cameraPos[0]/gridSize)-1;x<(cameraPos[0]+SCREEN_WIDTH)/gridSize;x++){
+        if(x>=0 && y >=0 && x<mapSize && y<mapSize){
+            switch(mineralMap[y][x]){
+                case 1:
+                    sprite = &sprites[3];
+                    C2D_SpriteSetPos(&sprite->spr,x*gridSize-cameraPos[0],y*gridSize-cameraPos[1]);
+                    C2D_DrawSprite(&sprites[3].spr);
+                    break;
+                case 2:
+                    sprite = &sprites[4];
+                    C2D_SpriteSetPos(&sprite->spr,x*gridSize-cameraPos[0],y*gridSize-cameraPos[1]);
+                    C2D_DrawSprite(&sprites[4].spr);
+                    break;
+                default:
+                    break;
+                }
+        }
+    }
+}
+//draw Player
+sprite = &sprites[2];
+C2D_SpriteSetPos(&sprite->spr,playerPos[0]-cameraPos[0],playerPos[1]-cameraPos[1]);
+C2D_DrawSprite(&sprites[2].spr);
+
+
+
 
 //C2D_DrawLine(10,100,FloorColor,20,200,FloorColor,5,0); draws a line - pretty cool
-C2D_DrawSprite(&sprites[0].spr);
-C2D_DrawSprite(&sprites[1].spr);
 
 C3D_FrameEnd(0);
 
