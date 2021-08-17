@@ -3,11 +3,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+//#include <Perlin.h>
 
 #define SCREEN_WIDTH  400
 #define SCREEN_HEIGHT 240
 #define PLAYER_SIZE 5
-#define NUMBER_OF_SPRITES_IN_THE_GAME 6
+#define NUMBER_OF_SPRITES_IN_THE_GAME 7
 
 //sprite struct
 typedef struct
