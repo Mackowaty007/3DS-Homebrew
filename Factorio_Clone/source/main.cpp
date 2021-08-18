@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-//#include <Perlin.h>
 
 #define SCREEN_WIDTH  400
 #define SCREEN_HEIGHT 240
@@ -39,7 +38,6 @@ int main(int argc, char* argv[])
         sprite = &sprites[i];
         C2D_SpriteFromSheet(&sprite->spr,spriteSheet,i);
     }
-
 
 
     //variables
