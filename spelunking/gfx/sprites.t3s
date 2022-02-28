@@ -1,0 +1,4 @@
+--atlas -f rgba8888 -z auto
+mainRobot.png
+mainRobotLookingUp.png
+mainRobotLookingDown.png

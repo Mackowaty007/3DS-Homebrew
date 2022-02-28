@@ -10,6 +10,7 @@ int floorMap[mapSize][mapSize];
 for(int x=0;x<mapSize;x++){
     for(int y=0;y<mapSize;y++){
         floorMap[y][x] = rand() % 2;
+        //floorMap[y][x] = perlin.noise(x,y,0)*90;
     }
 }
 

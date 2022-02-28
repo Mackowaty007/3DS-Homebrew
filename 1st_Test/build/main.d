@@ -1,4 +1,4 @@
-main.o: /home/mateusz/Desktop/3ds-Projects/1st_Test/source/main.c \
+main.o: /home/mackowaty/Desktop/projects/3ds/1st_Test/source/main.c \
  /opt/devkitpro/libctru/include/citro2d.h \
  /opt/devkitpro/libctru/include/citro3d.h \
  /opt/devkitpro/libctru/include/c3d/types.h \

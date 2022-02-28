@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include "Perlin.h"
+
 #define SCREEN_WIDTH  400
 #define SCREEN_HEIGHT 240
 #define PLAYER_SIZE 5
@@ -32,6 +34,8 @@ int main(int argc, char* argv[])
     spriteSheet = C2D_SpriteSheetLoad("romfs:/gfx/sprites.t3x");
     if(!spriteSheet) svcBreak(USERBREAK_PANIC);
 
+    Perlin perlin;
+
     //sprite init
     Sprite* sprite = &sprites[0];
     for(int i=0;i<NUMBER_OF_SPRITES_IN_THE_GAME;i++){
@@ -41,13 +45,13 @@ int main(int argc, char* argv[])
 
 
     //variables
-    int mapSize = 40;
-    int gridSize = 10;
-    float playerSpeed = 2;
-    float cameraSpeed = 4;
+    int mapSize        = 40;
+    int gridSize       = 10;
+    float playerSpeed  = 2;
+    float cameraSpeed  = 4;
     float playerPos[2] = {0,0};
     float cameraPos[2] = {0,0};
-    u32 clrClear    = C2D_Color32(0xA0,0x90,0xF0,0xFF);
+    u32 clrClear = C2D_Color32(0xA0,0x90,0xF0,0xFF);
 
     #include "WorldGeneration.h"
     
@@ -57,6 +61,9 @@ int main(int argc, char* argv[])
         #include "input.h"
 
         #include "render.h"
+
+        //debug purpouses only
+        //printf("\x1b[1;1Hcurrent noise value is: %f", perlin.noise(10,10,1));
     }
     C2D_SpriteSheetFree(spriteSheet);
 	gfxExit();

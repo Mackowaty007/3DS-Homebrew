@@ -1,32 +1,17 @@
-/**
- * Perlin.h
- * v. 1.0.0
- * 
- * Definition for Perlin class. An instantiated Perlin object can generate smoothed Perlin noise by calling the noise() function.
- *
- * Copyright Chris Little 2012
- * Author: Chris Little
- */
-
 #ifndef _PERLIN_H_
 #define _PERLIN_H_
 
+#define PI 3.14159265
+#define GRID_S 50
 
-class Perlin {
-public:
-	Perlin();
-	~Perlin();
+int lerp(int A,int B,float t){
+    return A+t*(B-A);
+}
+int slerp(int A,int B,float t){
+    return A+((1+sin(t*PI-PI/2))/2)*(B-A);
+}
+float returnNoise(int posX, int posY){
 
-	// Generates a Perlin (smoothed) noise value between -1 and 1, at the given 3D position.
-	float noise(float sample_x, float sample_y, float sample_z);
-
-
-private:
-	int *p; // Permutation table
-	// Gradient vectors
-	float *Gx;
-	float *Gy;
-	float *Gz;
-};
+}
 
 #endif

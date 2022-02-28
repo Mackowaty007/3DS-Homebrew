@@ -51,8 +51,8 @@ for(int y=cameraPos[1]/gridSize;y<(cameraPos[1]+SCREEN_HEIGHT)/gridSize;y++){
                 }
         }
     }
-}
-*/
+}*/
+
 //draw Player
 sprite = &sprites[2];
 C2D_SpriteSetPos(&sprite->spr,playerPos[0]-cameraPos[0],playerPos[1]-cameraPos[1]);
