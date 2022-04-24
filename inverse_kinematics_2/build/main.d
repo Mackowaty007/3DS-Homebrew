@@ -104,7 +104,6 @@ main.o: \
  /opt/devkitpro/libctru/include/c2d/sprite.h \
  /opt/devkitpro/libctru/include/c2d/text.h \
  /opt/devkitpro/libctru/include/c2d/font.h \
- /home/mackowaty/Desktop/projects/3ds/inverse_kinematics_2/source/findIntersections.hpp \
  /home/mackowaty/Desktop/projects/3ds/inverse_kinematics_2/source/input.hpp \
  /home/mackowaty/Desktop/projects/3ds/inverse_kinematics_2/source/draw.hpp
 /opt/devkitpro/libctru/include/citro2d.h:
@@ -211,6 +210,5 @@ main.o: \
 /opt/devkitpro/libctru/include/c2d/sprite.h:
 /opt/devkitpro/libctru/include/c2d/text.h:
 /opt/devkitpro/libctru/include/c2d/font.h:
-/home/mackowaty/Desktop/projects/3ds/inverse_kinematics_2/source/findIntersections.hpp:
 /home/mackowaty/Desktop/projects/3ds/inverse_kinematics_2/source/input.hpp:
 /home/mackowaty/Desktop/projects/3ds/inverse_kinematics_2/source/draw.hpp:
