@@ -2,10 +2,10 @@
 #pragma once
 
 #define sprites_snakeGameOver_idx 0
-#define sprites_enemyBlack1_idx 1
-#define sprites_enemyBlack2_idx 2
-#define sprites_enemyBlack3_idx 3
-#define sprites_enemyBlack4_idx 4
-#define sprites_enemyBlack5_idx 5
-#define sprites_enemyBlue1_idx 6
-#define sprites_enemyBlue2_idx 7
+#define sprites_snakeMenu_idx 1
+#define sprites_enemyBlack1_idx 2
+#define sprites_enemyBlack2_idx 3
+#define sprites_enemyBlack3_idx 4
+#define sprites_enemyBlack4_idx 5
+#define sprites_enemyBlack5_idx 6
+#define sprites_enemyBlue1_idx 7

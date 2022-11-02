@@ -1,10 +1,9 @@
 --atlas -f rgba8888 -z auto
 snakeGameOver.png
+snakeMenu.png
 enemyBlack1.png
 enemyBlack2.png
 enemyBlack3.png
 enemyBlack4.png
 enemyBlack5.png
 enemyBlue1.png
-enemyBlue2.png
-
