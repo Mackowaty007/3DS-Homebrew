@@ -8,4 +8,3 @@
 #define sprites_enemyBlack3_idx 4
 #define sprites_enemyBlack4_idx 5
 #define sprites_enemyBlack5_idx 6
-#define sprites_enemyBlue1_idx 7

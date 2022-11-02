@@ -38,10 +38,27 @@ std::vector<std::vector<int>> snakeBodyPos =
 
 
 // Create colors
-u32 clrRec1    = C2D_Color32(0x6A, 0xFC, 0xA9, 0xFF);
+u32 snakeColor = C2D_Color32(0x1A, 0xAC, 0x19, 0xFF);
 u32 EnemyColor = C2D_Color32(0xF0, 0x1F, 0x0F, 0xFF);
-u32 clrClear   = C2D_Color32(0x1F, 0x20, 0x0F, 0xFF);
+u32 clrClear   = C2D_Color32(0xFF, 0xF0, 0xFF, 0xFF);
 u32 menuBarColor=C2D_Color32(0xB3, 0xB3, 0x83, 0xFF);
+
+//create text (why does citro make me do this?)
+C2D_TextBuf g_staticBuf;
+C2D_Text myText[3];
+
+static void initText(){
+	g_staticBuf  = C2D_TextBufNew(4096);
+
+	C2D_TextParse(&myText[0], g_staticBuf, "Restart");
+	C2D_TextParse(&myText[1], g_staticBuf, "Scores");
+	C2D_TextParse(&myText[2], g_staticBuf, "Main Menu");
+	// Optimize the static text strings
+	C2D_TextOptimize(&myText[0]);
+	C2D_TextOptimize(&myText[1]);
+	C2D_TextOptimize(&myText[2]);
+}
+
 void exitTheGame(){
 	// Deinit libs
 	C2D_Fini();
@@ -126,8 +143,9 @@ int main(int argc, char* argv[]) {
 	spriteSheet = C2D_SpriteSheetLoad("romfs:/gfx/sprites.t3x");
 	if (!spriteSheet) svcBreak(USERBREAK_PANIC);
 
-	// Initialize sprites
+	// Initialize sprites and text
 	initSprites();
+	initText();
 	// Start measuring time
 	gettimeofday(&begin, 0);
 
@@ -180,7 +198,6 @@ int main(int argc, char* argv[]) {
 					break;
 			}
 
-
 			//teleport the snake to the other side when is goes through the screen border
 			if(snakeBodyPos[0][0]>=TOP_SCREEN_WIDTH/GRID_SIZE){
 				snakeBodyPos[0][0] = 0;
@@ -226,7 +243,7 @@ int main(int argc, char* argv[]) {
 		//draw the top screen:
 		//draw snake body
 		for(unsigned int i = 0;i<snakeBodyPos.size();i++){
-			C2D_DrawRectSolid(snakeBodyPos[i][0]*GRID_SIZE,snakeBodyPos[i][1]*GRID_SIZE,0,GRID_SIZE,GRID_SIZE, clrRec1);
+			C2D_DrawRectSolid(snakeBodyPos[i][0]*GRID_SIZE,snakeBodyPos[i][1]*GRID_SIZE,0,GRID_SIZE,GRID_SIZE, snakeColor);
 		}
 		//draw the enemy
 		C2D_DrawRectSolid(enemyPos[0]*GRID_SIZE,enemyPos[1]*GRID_SIZE,0,GRID_SIZE,GRID_SIZE,EnemyColor);
@@ -241,13 +258,20 @@ int main(int argc, char* argv[]) {
 		//draw the bottom screen:
 		C2D_SceneBegin(bottom);
 
+		//background sprite
 		Sprite* sprite = &sprites[1];
 		C2D_SpriteSetPos(&sprite->spr,BOT_SCREEN_WIDTH/2,BOT_SCREEN_HEIGHT/2);
 		C2D_DrawSprite(&sprites[1].spr);
-
+		//menus
 		C2D_DrawRectSolid(BOT_SCREEN_WIDTH/2-200/2,BOT_SCREEN_HEIGHT/2-20/2,0,200,20,menuBarColor);
 		C2D_DrawRectSolid(BOT_SCREEN_WIDTH/2-200/2,BOT_SCREEN_HEIGHT/2-20/2+20*2,0,200,20,menuBarColor);
 		C2D_DrawRectSolid(BOT_SCREEN_WIDTH/2-200/2,BOT_SCREEN_HEIGHT/2-20/2+20*4,0,200,20,menuBarColor);
+		//menu text
+		C2D_DrawText(&myText[0], C2D_AlignCenter, BOT_SCREEN_WIDTH/2,BOT_SCREEN_HEIGHT/2-20/2     , 0.5f, 0.5f, 0.5f);
+		C2D_DrawText(&myText[1], C2D_AlignCenter, BOT_SCREEN_WIDTH/2,BOT_SCREEN_HEIGHT/2-20/2+20*2, 0.5f, 0.5f, 0.5f);
+		C2D_DrawText(&myText[2], C2D_AlignCenter, BOT_SCREEN_WIDTH/2,BOT_SCREEN_HEIGHT/2-20/2+20*4, 0.5f, 0.5f, 0.5f);
+
+		//cursor
 		C2D_DrawRectSolid(touch.px,touch.py,0,GRID_SIZE,GRID_SIZE,EnemyColor);
 
 		C3D_FrameEnd(0);
