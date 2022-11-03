@@ -25,9 +25,16 @@ struct timeval begin, end;
 static C2D_SpriteSheet spriteSheet;
 static Sprite sprites[MAX_SPRITES];
 
+touchPosition touch;
+int lastPos[2];
+
 bool isGameOver = false;
 int enemyPos[2] = {rand()%TOP_SCREEN_WIDTH/GRID_SIZE,rand()%TOP_SCREEN_HEIGHT/GRID_SIZE};
 int snakeHeading = 0;
+int score = 0;
+struct{int x=BOT_SCREEN_WIDTH/2;int y=BOT_SCREEN_HEIGHT/2     ;int sizeX=200;int sizeY=20;u32 color;}menuBar1;
+struct{int x=BOT_SCREEN_WIDTH/2;int y=BOT_SCREEN_HEIGHT/2+20*2;int sizeX=200;int sizeY=20;u32 color;}menuBar2;
+struct{int x=BOT_SCREEN_WIDTH/2;int y=BOT_SCREEN_HEIGHT/2+20*4;int sizeX=200;int sizeY=20;u32 color;}menuBar3;
 std::vector<std::vector<int>> snakeBodyPos = 
 {
 	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
@@ -36,12 +43,12 @@ std::vector<std::vector<int>> snakeBodyPos =
 	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
 };
 
-
 // Create colors
-u32 snakeColor = C2D_Color32(0x1A, 0xAC, 0x19, 0xFF);
-u32 EnemyColor = C2D_Color32(0xF0, 0x1F, 0x0F, 0xFF);
-u32 clrClear   = C2D_Color32(0xFF, 0xF0, 0xFF, 0xFF);
-u32 menuBarColor=C2D_Color32(0xB3, 0xB3, 0x83, 0xFF);
+u32 snakeColor = 			C2D_Color32(0x1A, 0xAC, 0x19, 0xFF);
+u32 EnemyColor = 			C2D_Color32(0xF0, 0x1F, 0x0F, 0xFF);
+u32 clrClear   = 			C2D_Color32(0xFF, 0xF0, 0xFF, 0xFF);
+u32 menuBarColor=			C2D_Color32(0xB3, 0xB3, 0x83, 0xFF);
+u32 highlightedMenuBarColor=C2D_Color32(0x93, 0x93, 0x53, 0xFF);
 
 //create text (why does citro make me do this?)
 C2D_TextBuf g_staticBuf;
@@ -52,7 +59,7 @@ static void initText(){
 
 	C2D_TextParse(&myText[0], g_staticBuf, "Restart");
 	C2D_TextParse(&myText[1], g_staticBuf, "Scores");
-	C2D_TextParse(&myText[2], g_staticBuf, "Main Menu");
+	C2D_TextParse(&myText[2], g_staticBuf, "Options");
 	// Optimize the static text strings
 	C2D_TextOptimize(&myText[0]);
 	C2D_TextOptimize(&myText[1]);
@@ -67,8 +74,9 @@ void exitTheGame(){
 	romfsExit();
 }
 
-void handleInput(){
+void handleGamepadInput(){
 	hidScanInput();
+
 	// Respond to user input
 	u32 kDown = hidKeysDown();
 	if (kDown & KEY_START)
@@ -109,6 +117,62 @@ void handleInput(){
             snakeHeading = 4;
         }
     }
+}
+
+bool isScreenButtonPressed(int x,int y,int sizeX,int sizeY){
+	//checks if player clicked on the bar
+	if(lastPos[0]==0 && lastPos[1]==0){
+		if(touch.px>x-sizeX/2 && touch.px<x+sizeX/2 && touch.py>y-sizeY/2 && touch.py<y+sizeY/2){
+			return true;
+		}
+	}
+
+	lastPos[0] = touch.px;
+	lastPos[1] = touch.py;
+	return false;
+}
+void handleScreenInput(){
+	hidTouchRead(&touch);
+
+	//restart
+	//highlights the buttons when hovering over them
+	if(touch.px>menuBar1.x-menuBar1.sizeX/2 && touch.px<menuBar1.x+menuBar1.sizeX/2 && touch.py>menuBar1.y-menuBar1.sizeY/2 && touch.py<menuBar1.y+menuBar1.sizeY/2){
+		menuBar1.color=highlightedMenuBarColor;
+	}
+	else{
+		menuBar1.color=menuBarColor;
+	}
+	if(isScreenButtonPressed(menuBar1.x,menuBar1.y,menuBar1.sizeX,menuBar1.sizeY) == true){
+		snakeBodyPos = {
+			{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
+			{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
+			{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
+			{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
+		};
+		snakeHeading = 0;
+		isGameOver = false;
+	}
+
+	
+	//scoreboard
+	//highlights the buttons when hovering over them
+	if(touch.px>menuBar2.x-menuBar2.sizeX/2 && touch.px<menuBar2.x+menuBar2.sizeX/2 && touch.py>menuBar2.y-menuBar2.sizeY/2 && touch.py<menuBar2.y+menuBar2.sizeY/2){
+		menuBar2.color=highlightedMenuBarColor;
+	}
+	else{
+		menuBar2.color=menuBarColor;
+	}
+	isScreenButtonPressed(menuBar2.x,menuBar2.y,menuBar2.sizeX,menuBar2.sizeY);
+
+	//options
+	//highlights the buttons when hovering over them
+	if(touch.px>menuBar3.x-menuBar3.sizeX/2 && touch.px<menuBar3.x+menuBar3.sizeX/2 && touch.py>menuBar3.y-menuBar3.sizeY/2 && touch.py<menuBar3.y+menuBar3.sizeY/2){
+		menuBar3.color=highlightedMenuBarColor;
+	}
+	else{
+		menuBar3.color=menuBarColor;
+	}
+	isScreenButtonPressed(menuBar3.x,menuBar3.y,menuBar3.sizeX,menuBar3.sizeY);
 }
 
 //---------------------------------------------------------------------------------
@@ -153,16 +217,8 @@ int main(int argc, char* argv[]) {
 	while (aptMainLoop())
 	{
 		//handle input
-		handleInput();	
-
-		touchPosition touch;
-
-		//Read the touch screen coordinates
-		hidTouchRead(&touch);
-
-		//Print the touch screen coordinates
-		printf("\x1b[2;0H%03d; %03d", touch.px, touch.py);
-
+		handleGamepadInput();	
+		handleScreenInput();
 
 		// Stop measuring time and calculate the elapsed time
 		gettimeofday(&end, 0);
@@ -263,16 +319,13 @@ int main(int argc, char* argv[]) {
 		C2D_SpriteSetPos(&sprite->spr,BOT_SCREEN_WIDTH/2,BOT_SCREEN_HEIGHT/2);
 		C2D_DrawSprite(&sprites[1].spr);
 		//menus
-		C2D_DrawRectSolid(BOT_SCREEN_WIDTH/2-200/2,BOT_SCREEN_HEIGHT/2-20/2,0,200,20,menuBarColor);
-		C2D_DrawRectSolid(BOT_SCREEN_WIDTH/2-200/2,BOT_SCREEN_HEIGHT/2-20/2+20*2,0,200,20,menuBarColor);
-		C2D_DrawRectSolid(BOT_SCREEN_WIDTH/2-200/2,BOT_SCREEN_HEIGHT/2-20/2+20*4,0,200,20,menuBarColor);
+		C2D_DrawRectSolid(menuBar1.x-200/2,menuBar1.y-20/2,0,200,20,menuBar1.color);
+		C2D_DrawRectSolid(menuBar2.x-200/2,menuBar2.y-20/2,0,200,20,menuBar2.color);
+		C2D_DrawRectSolid(menuBar3.x-200/2,menuBar3.y-20/2,0,200,20,menuBar3.color);
 		//menu text
-		C2D_DrawText(&myText[0], C2D_AlignCenter, BOT_SCREEN_WIDTH/2,BOT_SCREEN_HEIGHT/2-20/2     , 0.5f, 0.5f, 0.5f);
-		C2D_DrawText(&myText[1], C2D_AlignCenter, BOT_SCREEN_WIDTH/2,BOT_SCREEN_HEIGHT/2-20/2+20*2, 0.5f, 0.5f, 0.5f);
-		C2D_DrawText(&myText[2], C2D_AlignCenter, BOT_SCREEN_WIDTH/2,BOT_SCREEN_HEIGHT/2-20/2+20*4, 0.5f, 0.5f, 0.5f);
-
-		//cursor
-		C2D_DrawRectSolid(touch.px,touch.py,0,GRID_SIZE,GRID_SIZE,EnemyColor);
+		C2D_DrawText(&myText[0], C2D_AlignCenter, menuBar1.x,menuBar1.y-20/3, 0.5f, 0.5f, 0.5f);
+		C2D_DrawText(&myText[1], C2D_AlignCenter, menuBar2.x,menuBar2.y-20/3, 0.5f, 0.5f, 0.5f);
+		C2D_DrawText(&myText[2], C2D_AlignCenter, menuBar3.x,menuBar3.y-20/3, 0.5f, 0.5f, 0.5f);
 
 		C3D_FrameEnd(0);
 		
