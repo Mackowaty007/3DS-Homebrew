@@ -51,11 +51,12 @@ u32 menuBarColor=			C2D_Color32(0xB3, 0xB3, 0x83, 0xFF);
 u32 highlightedMenuBarColor=C2D_Color32(0x93, 0x93, 0x53, 0xFF);
 
 //create text (why does citro make me do this?)
-C2D_TextBuf g_staticBuf;
+C2D_TextBuf g_staticBuf, g_dynamicBuf;
 C2D_Text myText[3];
 
 static void initText(){
 	g_staticBuf  = C2D_TextBufNew(4096);
+	g_dynamicBuf = C2D_TextBufNew(4096);
 
 	C2D_TextParse(&myText[0], g_staticBuf, "Restart");
 	C2D_TextParse(&myText[1], g_staticBuf, "Scores");
@@ -210,6 +211,8 @@ int main(int argc, char* argv[]) {
 	// Initialize sprites and text
 	initSprites();
 	initText();
+	static const char textScore[] = "score goes here";
+	
 	// Start measuring time
 	gettimeofday(&begin, 0);
 
@@ -295,7 +298,7 @@ int main(int argc, char* argv[]) {
 		C2D_TargetClear(top, clrClear);
 		C2D_TargetClear(bottom, clrClear);
 		C2D_SceneBegin(top);
-		//draw the top screen:
+
 		//draw snake body
 		for(unsigned int i = 0;i<snakeBodyPos.size();i++){
 			C2D_DrawRectSolid(snakeBodyPos[i][0]*GRID_SIZE,snakeBodyPos[i][1]*GRID_SIZE,0,GRID_SIZE,GRID_SIZE, snakeColor);
@@ -309,6 +312,15 @@ int main(int argc, char* argv[]) {
 			C2D_SpriteSetPos(&sprite->spr,TOP_SCREEN_WIDTH/2,TOP_SCREEN_HEIGHT/2);
 			C2D_DrawSprite(&sprites[0].spr);
 		}
+
+		//draw the scores
+		C2D_TextBufClear(g_dynamicBuf);
+		C2D_Text dynText;
+		//let's do some hackery!
+		//char* pointerToTextScore = textScore 
+		C2D_TextParse(&dynText, g_dynamicBuf, textScore);
+		C2D_TextOptimize(&dynText);
+		C2D_DrawText(&dynText, C2D_AlignLeft, 5,5,0,0.5f,0.5f);
 		
 		//draw the bottom screen:
 		C2D_SceneBegin(bottom);
