@@ -8,7 +8,7 @@
 #include <vector>
 #include <random>
 
-#define MAX_SPRITES 8
+#define MAX_SPRITES 7
 #define TOP_SCREEN_WIDTH 400
 #define TOP_SCREEN_HEIGHT 240
 #define BOT_SCREEN_WIDTH 320
@@ -40,7 +40,7 @@ std::vector<std::vector<int>> snakeBodyPos =
 	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
 	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
 	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
-	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
+	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2}
 };
 
 // Create colors
@@ -233,7 +233,7 @@ int main(int argc, char* argv[]) {
 
 			//move all the body parts
 			//(this part is before the "move snakes head" stuff cuz it fixes a bug where 2 elements are in the same space)
-			for (int i=snakeBodyPos.size();i>0;i--){
+			for (int i=snakeBodyPos.size()-1;i>=1;i--){
 				snakeBodyPos[i][0] = snakeBodyPos[i-1][0];
 				snakeBodyPos[i][1] = snakeBodyPos[i-1][1];
 			}
@@ -290,7 +290,6 @@ int main(int argc, char* argv[]) {
 				}
 			}
 		}
-
 		// Render the scene
 		C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
 		C2D_TargetClear(top, clrClear);
