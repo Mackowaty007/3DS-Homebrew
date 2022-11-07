@@ -1,0 +1,7 @@
+--atlas -f rgba8888 -z auto
+snakeGameOver.png
+snakeMenu.png
+snakeHead.png
+snakeBody.png
+snakeTail.png
+snakeTurning.png
