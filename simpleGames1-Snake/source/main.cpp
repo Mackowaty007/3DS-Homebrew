@@ -1,4 +1,3 @@
-// Simple citro2d untextured shape example
 #include <3ds.h>
 #include <citro2d.h>
 #include <time.h>
@@ -8,14 +7,16 @@
 #include <vector>
 #include <random>
 
-#define MAX_SPRITES 6
+#define MAX_SPRITES 7
 #define TOP_SCREEN_WIDTH 400
 #define TOP_SCREEN_HEIGHT 240
 #define BOT_SCREEN_WIDTH 320
 #define BOT_SCREEN_HEIGHT 240
 #define GRID_SIZE 10
+#define PI 3.1416
 
-//#define DEBUG_MODE
+//#define BOTTOM_DEBUG_MODE
+//#define TOP_DEBUG_MODE
 
 // Simple sprite struct
 typedef struct
@@ -28,12 +29,13 @@ static C2D_SpriteSheet spriteSheet;
 static Sprite sprites[MAX_SPRITES];
 
 touchPosition touch;
-int lastPos[2];
+int lastPos[2];//the last position where the touch input was
 
+bool showTheScoreBoard = false;
 bool isGameOver = false;
 int enemyPos[2] = {rand()%TOP_SCREEN_WIDTH/GRID_SIZE,rand()%TOP_SCREEN_HEIGHT/GRID_SIZE};
 int snakeHeading = 0;
-int score = 0;
+std::vector<int> score= {0};
 struct{int x=BOT_SCREEN_WIDTH/2;int y=BOT_SCREEN_HEIGHT/2     ;int sizeX=200;int sizeY=20;u32 color;}menuBar1;
 struct{int x=BOT_SCREEN_WIDTH/2;int y=BOT_SCREEN_HEIGHT/2+20*2;int sizeX=200;int sizeY=20;u32 color;}menuBar2;
 struct{int x=BOT_SCREEN_WIDTH/2;int y=BOT_SCREEN_HEIGHT/2+20*4;int sizeX=200;int sizeY=20;u32 color;}menuBar3;
@@ -53,19 +55,44 @@ u32 highlightedMenuBarColor=C2D_Color32(0x93, 0x93, 0x53, 0xFF);
 
 //create text (why does citro make me do this?)
 C2D_TextBuf g_staticBuf, g_dynamicBuf;
-C2D_Text myText[3];
+C2D_Text myText[4];
 
 static void initText(){
 	g_staticBuf  = C2D_TextBufNew(4096);
 	g_dynamicBuf = C2D_TextBufNew(4096);
 
+	//menus
 	C2D_TextParse(&myText[0], g_staticBuf, "Restart");
 	C2D_TextParse(&myText[1], g_staticBuf, "Scores");
 	C2D_TextParse(&myText[2], g_staticBuf, "Options");
+	//pause screen
+	C2D_TextParse(&myText[3], g_staticBuf, "Pause");
+
 	// Optimize the static text strings
 	C2D_TextOptimize(&myText[0]);
 	C2D_TextOptimize(&myText[1]);
 	C2D_TextOptimize(&myText[2]);
+	C2D_TextOptimize(&myText[3]);
+}
+
+void pauseTheGame(C3D_RenderTarget* screenTarget){
+	#ifndef TOP_DEBUG_MODE
+	C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
+	C2D_SceneBegin(screenTarget);
+	//C2D_TargetClear(top, clrClear);
+	//show the pause text
+	C2D_DrawText(&myText[3], C2D_AlignCenter, TOP_SCREEN_WIDTH/2,TOP_SCREEN_HEIGHT/2, 0.5f, 0.5f, 0.5f);
+	C3D_FrameEnd(0);
+	#endif
+	while (aptMainLoop()){
+		//wait for an unpause
+		hidScanInput();
+		u32 kDown = hidKeysDown();
+		if (kDown & KEY_START){
+			break;
+		}
+	}
+
 }
 
 void exitTheGame(){
@@ -76,13 +103,35 @@ void exitTheGame(){
 	romfsExit();
 }
 
-void handleGamepadInput(){
+void restartTheGame(){
+	score.push_back(0);
+	snakeBodyPos = {
+		{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
+		{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
+		{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
+		{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
+	};
+	//generate random enemy pos
+	enemyPos[0] = rand()%TOP_SCREEN_WIDTH /GRID_SIZE;
+	enemyPos[1] = rand()%TOP_SCREEN_HEIGHT/GRID_SIZE;
+
+	snakeHeading = 0;
+	isGameOver = false;
+}
+
+void handleGamepadInput(C3D_RenderTarget* screenTarget){
 	hidScanInput();
 
 	// Respond to user input
 	u32 kDown = hidKeysDown();
-	if (kDown & KEY_START)
-		exitTheGame(); // break in order to return to hbmenu
+	if (kDown & KEY_START){
+		pauseTheGame(screenTarget);
+		if (kDown & KEY_SELECT){
+			exitTheGame();
+		}
+	}
+	if (kDown & KEY_SELECT)
+		restartTheGame();
     if (kDown & KEY_DUP){
         //the code below is used to prevent the player from moving back into himself
         if(snakeHeading==2){
@@ -121,62 +170,65 @@ void handleGamepadInput(){
     }
 }
 
-bool isScreenButtonPressed(int x,int y,int sizeX,int sizeY){
+int isScreenButtonPressed(int x,int y,int sizeX,int sizeY){
 	//checks if player clicked on the bar
-	if(lastPos[0]==0 && lastPos[1]==0){
-		if(touch.px>x-sizeX/2 && touch.px<x+sizeX/2 && touch.py>y-sizeY/2 && touch.py<y+sizeY/2){
-			return true;
+	if(touch.px>x-sizeX/2 && touch.px<x+sizeX/2 && touch.py>y-sizeY/2 && touch.py<y+sizeY/2){
+		if(lastPos[0]==0 && lastPos[1]==0){
+			return 2;
 		}
+		return 1;
 	}
-
-	lastPos[0] = touch.px;
-	lastPos[1] = touch.py;
-	return false;
+	return 0;
+	//return 2 if a button was pressed
+	//return 1 if the touch input is over the button
+	//return 0 if nothing happen
 }
+
 void handleScreenInput(){
 	hidTouchRead(&touch);
 
-	//highlights the buttons when hovering over them
-	if(touch.px>menuBar1.x-menuBar1.sizeX/2 && touch.px<menuBar1.x+menuBar1.sizeX/2 && touch.py>menuBar1.y-menuBar1.sizeY/2 && touch.py<menuBar1.y+menuBar1.sizeY/2){
+	//restart button
+	//on press
+	if(isScreenButtonPressed(menuBar1.x,menuBar1.y,menuBar1.sizeX,menuBar1.sizeY) == 2){
+		restartTheGame();
+	}
+	//on hover
+	else if(isScreenButtonPressed(menuBar1.x,menuBar1.y,menuBar1.sizeX,menuBar1.sizeY) == 1){
 		menuBar1.color=highlightedMenuBarColor;
 	}
 	else{
 		menuBar1.color=menuBarColor;
 	}
 
-	//restart the game
-	if(isScreenButtonPressed(menuBar1.x,menuBar1.y,menuBar1.sizeX,menuBar1.sizeY) == true){
-		score = 0;
-		snakeBodyPos = {
-			{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
-			{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
-			{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
-			{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
-		};
-		snakeHeading = 0;
-		isGameOver = false;
+	//scoreboard button
+	//on press
+	if(isScreenButtonPressed(menuBar2.x,menuBar2.y,menuBar2.sizeX,menuBar2.sizeY) == 2){
+		//flip this option
+		showTheScoreBoard = !showTheScoreBoard;
 	}
-
-	
-	//scoreboard
-	//highlights the buttons when hovering over them
-	if(touch.px>menuBar2.x-menuBar2.sizeX/2 && touch.px<menuBar2.x+menuBar2.sizeX/2 && touch.py>menuBar2.y-menuBar2.sizeY/2 && touch.py<menuBar2.y+menuBar2.sizeY/2){
+	//on hover
+	else if(isScreenButtonPressed(menuBar2.x,menuBar2.y,menuBar2.sizeX,menuBar2.sizeY) == 1){
 		menuBar2.color=highlightedMenuBarColor;
 	}
 	else{
 		menuBar2.color=menuBarColor;
 	}
-	isScreenButtonPressed(menuBar2.x,menuBar2.y,menuBar2.sizeX,menuBar2.sizeY);
 
-	//options
-	//highlights the buttons when hovering over them
-	if(touch.px>menuBar3.x-menuBar3.sizeX/2 && touch.px<menuBar3.x+menuBar3.sizeX/2 && touch.py>menuBar3.y-menuBar3.sizeY/2 && touch.py<menuBar3.y+menuBar3.sizeY/2){
+	//options button
+	//on press
+	if(isScreenButtonPressed(menuBar3.x,menuBar3.y,menuBar3.sizeX,menuBar3.sizeY) == 2){
+		restartTheGame();
+	}
+	//on hover
+	else if(isScreenButtonPressed(menuBar3.x,menuBar3.y,menuBar3.sizeX,menuBar3.sizeY) == 1){
 		menuBar3.color=highlightedMenuBarColor;
 	}
 	else{
 		menuBar3.color=menuBarColor;
 	}
-	isScreenButtonPressed(menuBar3.x,menuBar3.y,menuBar3.sizeX,menuBar3.sizeY);
+
+	lastPos[0] = touch.px;
+	lastPos[1] = touch.py;
 }
 
 //---------------------------------------------------------------------------------
@@ -201,12 +253,17 @@ int main(int argc, char* argv[]) {
 	C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);
 	C2D_Init(C2D_DEFAULT_MAX_OBJECTS);
 	C2D_Prepare();
-	#ifdef DEBUG_MODE
+	#ifdef BOTTOM_DEBUG_MODE
 	consoleInit(GFX_BOTTOM, NULL);
 	#endif
+	#ifdef TOP_DEBUG_MODE
+	consoleInit(GFX_TOP, NULL);
+	#endif
 	// Create screens
+	#ifndef TOP_DEBUG_MODE
 	C3D_RenderTarget* top = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT);
-	#ifndef DEBUG_MODE
+	#endif
+	#ifndef BOTTOM_DEBUG_MODE
 	C3D_RenderTarget* bottom = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
 	#endif
 
@@ -223,9 +280,9 @@ int main(int argc, char* argv[]) {
 
 	// Main loop
 	while (aptMainLoop())
-	{
+	{	
 		//handle input
-		handleGamepadInput();	
+		handleGamepadInput(top);	
 		handleScreenInput();
 
 		// Stop measuring time and calculate the elapsed time
@@ -279,7 +336,7 @@ int main(int argc, char* argv[]) {
 			//add a body part if it colides with an enemy
 			if(snakeBodyPos[0][0]==enemyPos[0] && snakeBodyPos[0][1]==enemyPos[1]){
 				//add a point to the score counter
-				score ++;
+				score[score.size()-1] ++;
 
 				//generate random enemy pos
 				enemyPos[0] = rand()%TOP_SCREEN_WIDTH /GRID_SIZE;
@@ -303,57 +360,118 @@ int main(int argc, char* argv[]) {
 		}
 		// Render the scene
 		C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
+		#ifndef TOP_DEBUG_MODE
 		C2D_TargetClear(top, clrClear);
-		#ifndef DEBUG_MODE
+		#endif
+		#ifndef BOTTOM_DEBUG_MODE
 		C2D_TargetClear(bottom, clrClear);
 		#endif
+		#ifndef TOP_DEBUG_MODE
 		C2D_SceneBegin(top);
 
-		//draw snake body
-		for(int i = snakeBodyPos.size()-1;i>=0;i = i-1){
-			//C2D_DrawRectSolid(snakeBodyPos[i][0]*GRID_SIZE,snakeBodyPos[i][1]*GRID_SIZE,0,GRID_SIZE,GRID_SIZE, snakeColor);
-			/*
-				head sprite = 2
-				body sprite = 3
-				tail sprite = 4
-			*/
-			int whichSprite;
-			if(i==0){
-				whichSprite = 2;
-			}
-			else if(i== int(snakeBodyPos.size()-1)){
-				whichSprite = 4;
-			}
-			else{
-				whichSprite = 3;
-			}
-			Sprite* sprite = &sprites[whichSprite];
-			C2D_SpriteSetPos(&sprite->spr,snakeBodyPos[i][0]*GRID_SIZE+GRID_SIZE/2,snakeBodyPos[i][1]*GRID_SIZE+GRID_SIZE/2);
-			C2D_DrawSprite(&sprites[whichSprite].spr);
-		}
-		//draw the enemy
-		C2D_DrawRectSolid(enemyPos[0]*GRID_SIZE,enemyPos[1]*GRID_SIZE,0,GRID_SIZE,GRID_SIZE,EnemyColor);
+		if(!showTheScoreBoard){
+			//draw snake body
+			for(int i = snakeBodyPos.size()-1;i>=0;i = i-1){
+				//C2D_DrawRectSolid(snakeBodyPos[i][0]*GRID_SIZE,snakeBodyPos[i][1]*GRID_SIZE,0,GRID_SIZE,GRID_SIZE, snakeColor);
+				/*
+					head sprite = 2
+					body sprite = 3
+					tail sprite = 4
+				*/
+				int whichSprite;
+				if(i==0){
+					whichSprite = 2;
+				}
+				else if(i== int(snakeBodyPos.size()-1)){
+					whichSprite = 4;
+				}
+				else{
+					whichSprite = 3;
+				}
+				Sprite* sprite = &sprites[whichSprite];
 
+				
+				//change the body parts direction
+				if(i != 0){
+					//check if next body part is on the left
+					if	   (snakeBodyPos[i-1][0] == snakeBodyPos[i][0]-1){
+						C2D_SpriteSetRotation(&sprite->spr,PI/2*3);
+					}
+					//check if next body part is on the right
+					else if(snakeBodyPos[i-1][0] == snakeBodyPos[i][0]+1){
+						C2D_SpriteSetRotation(&sprite->spr,PI/2);
+					}
+					//check if next body part is on the top
+					else if(snakeBodyPos[i-1][1] == snakeBodyPos[i][1]-1){
+						C2D_SpriteSetRotation(&sprite->spr,PI*2);
+					}
+					//check if next body part is on the bottom
+					else if(snakeBodyPos[i-1][1] == snakeBodyPos[i][1]+1){
+						C2D_SpriteSetRotation(&sprite->spr,PI);
+					}
+					else{
+						C2D_SpriteSetRotation(&sprite->spr,PI/4);
+						//this rotation is set if the snake doesn't know where the next body part is...
+					}
+				}
+				//change the head direction
+				else{
+					//check if next body part is on the left
+					if(snakeHeading==3){
+						C2D_SpriteSetRotation(&sprite->spr,PI/2*3);
+					}
+					//check if next body part is on the right
+					else if(snakeHeading==4){
+						C2D_SpriteSetRotation(&sprite->spr,PI/2*1);
+					}
+					//check if next body part is on the top
+					else if(snakeHeading==1){
+						C2D_SpriteSetRotation(&sprite->spr,0);
+					}
+					//check if next body part is on the bottom
+					else if(snakeHeading==2){
+						C2D_SpriteSetRotation(&sprite->spr,PI/2*2);
+					}
+					else{
+						C2D_SpriteSetRotation(&sprite->spr,PI/4);
+						//basically an error! this if for debugging purpuses only. Delete this if everything works fine!
+					}
+				}
+				//C2D_SpriteSetRotation(&sprite->spr,PI/2);
+				C2D_SpriteSetPos(&sprite->spr,snakeBodyPos[i][0]*GRID_SIZE+GRID_SIZE/2,snakeBodyPos[i][1]*GRID_SIZE+GRID_SIZE/2);
+				C2D_DrawSprite(&sprites[whichSprite].spr);
+			}
+			//draw the enemy
+			C2D_DrawRectSolid(enemyPos[0]*GRID_SIZE,enemyPos[1]*GRID_SIZE,0,GRID_SIZE,GRID_SIZE,EnemyColor);
+
+			//draw the scores
+			C2D_TextBufClear(g_dynamicBuf);
+			C2D_Text dynText;
+
+			//let's do some hackery!
+			char scoreInTextForm[3];
+			itoa(score[score.size()-1],scoreInTextForm,10);//<<this is some bullcrap!! But at least it works.
+
+			C2D_TextParse(&dynText, g_dynamicBuf, scoreInTextForm);
+			C2D_TextOptimize(&dynText);
+			C2D_DrawText(&dynText, C2D_AlignLeft, 5,5,0,0.5f,0.5f);
+		}
+		//show this if youre in the score menu
+		else{
+			Sprite* sprite = &sprites[6];
+			C2D_SpriteSetPos(&sprite->spr,TOP_SCREEN_WIDTH/2,TOP_SCREEN_HEIGHT/2);
+			C2D_DrawSprite(&sprites[6].spr);
+		}
 		//draw game over screen
 		if(isGameOver){
 			Sprite* sprite = &sprites[0];
 			C2D_SpriteSetPos(&sprite->spr,TOP_SCREEN_WIDTH/2,TOP_SCREEN_HEIGHT/2);
 			C2D_DrawSprite(&sprites[0].spr);
 		}
-
-		//draw the scores
-		C2D_TextBufClear(g_dynamicBuf);
-		C2D_Text dynText;
-		//let's do some hackery!
-		char scoreInTextForm[2];
-		itoa(score,scoreInTextForm,10);
-
-		C2D_TextParse(&dynText, g_dynamicBuf, scoreInTextForm);
-		//C2D_TextOptimize(&dynText);
-		C2D_DrawText(&dynText, C2D_AlignLeft, 5,5,0,0.5f,0.5f);
+		#endif
 		
 		//draw the bottom screen:
-		#ifndef DEBUG_MODE
+		#ifndef BOTTOM_DEBUG_MODE
 		C2D_SceneBegin(bottom);
 
 		//background sprite

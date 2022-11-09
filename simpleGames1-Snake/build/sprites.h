@@ -7,3 +7,4 @@
 #define sprites_snakeBody_idx 3
 #define sprites_snakeTail_idx 4
 #define sprites_snakeTurning_idx 5
+#define sprites_mainBackground_idx 6

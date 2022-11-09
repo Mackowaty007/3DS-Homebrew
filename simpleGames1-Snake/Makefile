@@ -40,6 +40,7 @@ GRAPHICS	:=	gfx
 #GFXBUILD	:=	$(BUILD)
 ROMFS		:=	romfs
 GFXBUILD	:=	$(ROMFS)/gfx
+APP_AUTHOR	:=	Mackowaty
 
 #---------------------------------------------------------------------------------
 # options for code generation
