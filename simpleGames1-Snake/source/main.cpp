@@ -7,7 +7,7 @@
 #include <vector>
 #include <random>
 
-#define MAX_SPRITES 10
+#define MAX_SPRITES 11
 #define TOP_SCREEN_WIDTH 400
 #define TOP_SCREEN_HEIGHT 240
 #define BOT_SCREEN_WIDTH 320
@@ -64,8 +64,6 @@ std::vector<std::vector<int>> snakeBodyPos =
 };
 
 // Create colors
-u32 snakeColor = 			C2D_Color32(0x1A, 0xAC, 0x19, 0xFF);
-u32 EnemyColor = 			C2D_Color32(0xF0, 0x1F, 0x0F, 0xFF);
 u32 clrClear   = 			C2D_Color32(0xFF, 0xF0, 0xFF, 0xFF);
 u32 menuBarColor=			C2D_Color32(0xB3, 0xB3, 0x83, 0xFF);
 u32 highlightedMenuBarColor=C2D_Color32(0x93, 0x93, 0x53, 0xFF);
@@ -463,6 +461,11 @@ int main(int argc, char* argv[]) {
 		#ifndef TOP_DEBUG_MODE
 		C2D_SceneBegin(top);
 
+		//draw background 
+		Sprite* sprite = &sprites[10];
+		C2D_SpriteSetPos(&sprite->spr,TOP_SCREEN_WIDTH/2,TOP_SCREEN_HEIGHT/2);
+		C2D_DrawSprite(&sprites[10].spr);
+
 		//draw snake body
 		for(int i = snakeBodyPos.size()-1;i>=0;i = i-1){
 			/*
@@ -606,7 +609,9 @@ int main(int argc, char* argv[]) {
 			C2D_DrawSprite(&sprites[whichSprite].spr);
 		}
 		//draw the enemy
-		C2D_DrawRectSolid(enemyPos[0]*GRID_SIZE,enemyPos[1]*GRID_SIZE,0,GRID_SIZE,GRID_SIZE,EnemyColor);
+		sprite = &sprites[9];
+		C2D_SpriteSetPos(&sprite->spr,enemyPos[0]*GRID_SIZE+GRID_SIZE/2,enemyPos[1]*GRID_SIZE+GRID_SIZE/2);
+		C2D_DrawSprite(&sprites[9].spr);
 		//draw the scores
 		C2D_TextBufClear(g_dynamicBuf);
 		C2D_Text dynText;
@@ -630,7 +635,7 @@ int main(int argc, char* argv[]) {
 		C2D_SceneBegin(bottom);
 
 		//background sprite
-		Sprite* sprite = &sprites[1];
+		sprite = &sprites[1];
 		C2D_SpriteSetPos(&sprite->spr,BOT_SCREEN_WIDTH/2,BOT_SCREEN_HEIGHT/2);
 		C2D_DrawSprite(&sprites[1].spr);
 		//menus

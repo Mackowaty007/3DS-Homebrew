@@ -11,3 +11,4 @@
 #define sprites_backArrow_idx 7
 #define sprites_snakeTurningAlt_idx 8
 #define sprites_enemy_idx 9
+#define sprites_groundTexture_idx 10
