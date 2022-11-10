@@ -9,3 +9,5 @@
 #define sprites_snakeTurning_idx 5
 #define sprites_mainBackground_idx 6
 #define sprites_backArrow_idx 7
+#define sprites_snakeTurningAlt_idx 8
+#define sprites_enemy_idx 9

@@ -7,12 +7,11 @@
 #include <vector>
 #include <random>
 
-#define MAX_SPRITES 8
+#define MAX_SPRITES 10
 #define TOP_SCREEN_WIDTH 400
 #define TOP_SCREEN_HEIGHT 240
 #define BOT_SCREEN_WIDTH 320
 #define BOT_SCREEN_HEIGHT 240
-#define GRID_SIZE 10
 #define PI 3.1416
 
 //#define BOTTOM_DEBUG_MODE
@@ -31,7 +30,10 @@ static Sprite sprites[MAX_SPRITES];
 touchPosition touch;
 int lastPos[2];//the last position where the touch input was
 
+int GRID_SIZE = 10;
+float gameSpeed = 0.1;
 bool isGameOver = false;
+bool isTheWallModeOn = false;
 int enemyPos[2] = {rand()%TOP_SCREEN_WIDTH/GRID_SIZE,rand()%TOP_SCREEN_HEIGHT/GRID_SIZE};
 int snakeHeading = 0;
 int snakeHeadingBuffer = 0;
@@ -44,6 +46,18 @@ struct{int x=5;int y=5;int sizeX=35;int sizeY=35;u32 color;}goBackBox;
 
 std::vector<std::vector<int>> snakeBodyPos = 
 {
+	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
+	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
+	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
+	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
+	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
+	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
+	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
+	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
+	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
+	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
+	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
+	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
 	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
 	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
 	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2}
@@ -177,8 +191,7 @@ void restartTheGame(){
 	snakeBodyPos = {
 		{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
 		{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
-		{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
-		{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
+		{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2}
 	};
 	//generate random enemy pos
 	enemyPos[0] = rand()%TOP_SCREEN_WIDTH /GRID_SIZE;
@@ -370,7 +383,7 @@ int main(int argc, char* argv[]) {
 		handleScreenInput(top, bottom);
 
 		//wait before the next move
-		if(elapsed > 0.1 && isGameOver==false){
+		if(elapsed > gameSpeed && isGameOver==false){
 			// Start measuring time
 			gettimeofday(&begin, 0);
 
@@ -452,11 +465,12 @@ int main(int argc, char* argv[]) {
 
 		//draw snake body
 		for(int i = snakeBodyPos.size()-1;i>=0;i = i-1){
-			//C2D_DrawRectSolid(snakeBodyPos[i][0]*GRID_SIZE,snakeBodyPos[i][1]*GRID_SIZE,0,GRID_SIZE,GRID_SIZE, snakeColor);
 			/*
 				head sprite = 2
 				body sprite = 3
 				tail sprite = 4
+				turningLeft = 5
+				turningRight= 8
 			*/
 			int whichSprite;
 			if(i==0){
@@ -470,22 +484,91 @@ int main(int argc, char* argv[]) {
 			}
 			Sprite* sprite = &sprites[whichSprite];
 			
+
+			//change the sprite if it's the corner---------
+			if(i != 0 && i != int(snakeBodyPos.size()-1)){
+				//check if the next body part is on the left
+				if (snakeBodyPos[i-1][0] == snakeBodyPos[i][0]-1){
+					//check if the previous body part is above
+					if(snakeBodyPos[i+1][1] == snakeBodyPos[i][1]-1){
+						whichSprite = 8;
+						sprite = &sprites[whichSprite];
+						C2D_SpriteSetRotation(&sprite->spr,PI/2);
+					}
+					//check if the previous body part is bellow
+					else if(snakeBodyPos[i+1][1] == snakeBodyPos[i][1]+1){
+						whichSprite = 5;
+						sprite = &sprites[whichSprite];
+						C2D_SpriteSetRotation(&sprite->spr,0);
+					}
+				}
+				//check if the next body part is on the right
+				if (snakeBodyPos[i-1][0] == snakeBodyPos[i][0]+1){
+					//check if the previous body part is above
+					if(snakeBodyPos[i+1][1] == snakeBodyPos[i][1]-1){
+						whichSprite = 5;
+						sprite = &sprites[whichSprite];
+						C2D_SpriteSetRotation(&sprite->spr,PI);
+					}
+					//check if the previous body part is bellow
+					else if(snakeBodyPos[i+1][1] == snakeBodyPos[i][1]+1){
+						whichSprite = 8;
+						sprite = &sprites[whichSprite];
+						C2D_SpriteSetRotation(&sprite->spr,PI/2*3);
+					}
+				}
+				//check if the next body part is above
+				if (snakeBodyPos[i-1][1] == snakeBodyPos[i][1]-1){
+					//check if the previous body part is on the left
+					if(snakeBodyPos[i+1][0] == snakeBodyPos[i][0]-1){
+						whichSprite = 5;
+						sprite = &sprites[whichSprite];
+						C2D_SpriteSetRotation(&sprite->spr,PI/2);
+					}
+					//check if the previous body part is on the right
+					else if(snakeBodyPos[i+1][0] == snakeBodyPos[i][0]+1){
+						whichSprite = 8;
+						sprite = &sprites[whichSprite];
+						C2D_SpriteSetRotation(&sprite->spr,PI);
+					}
+				}
+				//check if the next body part is bellow
+				if (snakeBodyPos[i-1][1] == snakeBodyPos[i][1]+1){
+					//check if the previous body part is on the left
+					if(snakeBodyPos[i+1][0] == snakeBodyPos[i][0]-1){
+						whichSprite = 8;
+						sprite = &sprites[whichSprite];
+						C2D_SpriteSetRotation(&sprite->spr,0);
+					}
+					//check if the previous body part is on the right
+					else if(snakeBodyPos[i+1][0] == snakeBodyPos[i][0]+1){
+						whichSprite = 5;
+						sprite = &sprites[whichSprite];
+						C2D_SpriteSetRotation(&sprite->spr,PI/2*3);
+					}
+				}
+				//skip a chunck of code if this body part is a turing one
+				if (whichSprite == 5 || whichSprite == 8){
+					goto skipChangingTheBodyRotationStep;
+				}
+			}
+
 			//change the body parts direction
 			if(i != 0){
-				//check if next body part is on the left
-				if	   (snakeBodyPos[i-1][0] == snakeBodyPos[i][0]-1){
+				//check if next body part is on the left OR this body part is on the left border AND next body part is on the other side of the border
+				if	   (snakeBodyPos[i-1][0] == snakeBodyPos[i][0]-1 || (snakeBodyPos[i][0] - 1 <= 0 && snakeBodyPos[i+1][1] == snakeBodyPos[i][1])){
 					C2D_SpriteSetRotation(&sprite->spr,PI/2*3);
 				}
 				//check if next body part is on the right
-				else if(snakeBodyPos[i-1][0] == snakeBodyPos[i][0]+1){
+				else if(snakeBodyPos[i-1][0] == snakeBodyPos[i][0]+1 || (snakeBodyPos[i][0] + 1 >= TOP_SCREEN_WIDTH/GRID_SIZE && snakeBodyPos[i+1][1] == snakeBodyPos[i][1])){
 					C2D_SpriteSetRotation(&sprite->spr,PI/2);
 				}
 				//check if next body part is on the top
-				else if(snakeBodyPos[i-1][1] == snakeBodyPos[i][1]-1){
-					C2D_SpriteSetRotation(&sprite->spr,PI*2);
+				else if(snakeBodyPos[i-1][1] == snakeBodyPos[i][1]-1 || (snakeBodyPos[i][1] - 1 <= 0 && snakeBodyPos[i+1][0] == snakeBodyPos[i][0])){
+					C2D_SpriteSetRotation(&sprite->spr,0);
 				}
 				//check if next body part is on the bottom
-				else if(snakeBodyPos[i-1][1] == snakeBodyPos[i][1]+1){
+				else if(snakeBodyPos[i-1][1] == snakeBodyPos[i][1]+1 || (snakeBodyPos[i][1] + 1 >= TOP_SCREEN_HEIGHT/GRID_SIZE  && snakeBodyPos[i+1][0] == snakeBodyPos[i][0])){
 					C2D_SpriteSetRotation(&sprite->spr,PI);
 				}
 				else{
@@ -495,27 +578,30 @@ int main(int argc, char* argv[]) {
 			}
 			//change the head direction
 			else{
-				//check if next body part is on the left
-				if(snakeHeading==3){
-					C2D_SpriteSetRotation(&sprite->spr,PI/2*3);
-				}
-				//check if next body part is on the right
-				else if(snakeHeading==4){
-					C2D_SpriteSetRotation(&sprite->spr,PI/2*1);
-				}
-				//check if next body part is on the top
-				else if(snakeHeading==1){
-					C2D_SpriteSetRotation(&sprite->spr,0);
-				}
-				//check if next body part is on the bottom
-				else if(snakeHeading==2){
-					C2D_SpriteSetRotation(&sprite->spr,PI/2*2);
-				}
-				else{
-					C2D_SpriteSetRotation(&sprite->spr,0);
+				if(elapsed > gameSpeed && isGameOver==false){
+					//check if next body part is on the left
+					if(snakeHeading==3){
+						C2D_SpriteSetRotation(&sprite->spr,PI/2*3);
+					}
+					//check if next body part is on the right
+					else if(snakeHeading==4){
+						C2D_SpriteSetRotation(&sprite->spr,PI/2*1);
+					}
+					//check if next body part is on the top
+					else if(snakeHeading==1){
+						C2D_SpriteSetRotation(&sprite->spr,0);
+					}
+					//check if next body part is on the bottom
+					else if(snakeHeading==2){
+						C2D_SpriteSetRotation(&sprite->spr,PI/2*2);
+					}
+					else{
+						C2D_SpriteSetRotation(&sprite->spr,0);
+					}
 				}
 			}
-			//C2D_SpriteSetRotation(&sprite->spr,PI/2);
+			skipChangingTheBodyRotationStep:
+			C2D_SpriteSetScale(&sprite->spr,GRID_SIZE/10,GRID_SIZE/10);
 			C2D_SpriteSetPos(&sprite->spr,snakeBodyPos[i][0]*GRID_SIZE+GRID_SIZE/2,snakeBodyPos[i][1]*GRID_SIZE+GRID_SIZE/2);
 			C2D_DrawSprite(&sprites[whichSprite].spr);
 		}
