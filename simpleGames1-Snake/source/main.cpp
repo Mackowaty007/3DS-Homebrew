@@ -26,6 +26,7 @@ struct timeval begin, end;
 
 static C2D_SpriteSheet spriteSheet;
 static Sprite sprites[MAX_SPRITES];
+Sprite* sprite = &sprites[0];
 
 touchPosition touch;
 int lastPos[2];//the last position where the touch input was
@@ -39,25 +40,14 @@ int snakeHeading = 0;
 int snakeHeadingBuffer = 0;
 std::vector<int> score= {0};
 
+//all the buttons:
+// x and y are the middle of a button.
 struct{int x=BOT_SCREEN_WIDTH/2;int y=BOT_SCREEN_HEIGHT/2     ;int sizeX=200;int sizeY=20;u32 color;}menuBar1;
 struct{int x=BOT_SCREEN_WIDTH/2;int y=BOT_SCREEN_HEIGHT/2+20*2;int sizeX=200;int sizeY=20;u32 color;}menuBar2;
 struct{int x=BOT_SCREEN_WIDTH/2;int y=BOT_SCREEN_HEIGHT/2+20*4;int sizeX=200;int sizeY=20;u32 color;}menuBar3;
-struct{int x=5;int y=5;int sizeX=35;int sizeY=35;u32 color;}goBackBox;
 
 std::vector<std::vector<int>> snakeBodyPos = 
 {
-	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
-	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
-	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
-	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
-	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
-	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
-	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
-	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
-	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
-	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
-	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
-	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
 	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
 	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
 	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2}
@@ -67,6 +57,7 @@ std::vector<std::vector<int>> snakeBodyPos =
 u32 clrClear   = 			C2D_Color32(0xFF, 0xF0, 0xFF, 0xFF);
 u32 menuBarColor=			C2D_Color32(0xB3, 0xB3, 0x83, 0xFF);
 u32 highlightedMenuBarColor=C2D_Color32(0x93, 0x93, 0x53, 0xFF);
+u32 ScrollBackgroundColor  =C2D_Color32(0x29, 0x29, 0x13, 0xFF);
 
 //create text (why does citro make me do this?)
 C2D_TextBuf g_staticBuf, g_dynamicBuf;
@@ -134,6 +125,8 @@ void pauseTheGame(C3D_RenderTarget* topScreenTarget, C3D_RenderTarget* botScreen
 }
 
 void showTheScoreBoard(C3D_RenderTarget* topScreenTarget, C3D_RenderTarget* botScreenTarget){
+	struct{int x=35/2+5;int y=35/2+5;int sizeX=35;int sizeY=35;u32 color;}goBackBox;
+	struct{int x=BOT_SCREEN_WIDTH-20-20/2;int y=20+100/2;int sizeX=20;int sizeY=100;u32 color = menuBarColor;}scrollBar;
 	while (aptMainLoop()){
 		//handle input
 		hidScanInput();
@@ -150,9 +143,33 @@ void showTheScoreBoard(C3D_RenderTarget* topScreenTarget, C3D_RenderTarget* botS
 		else if(isScreenButtonPressed(goBackBox.x,goBackBox.y,goBackBox.sizeX,goBackBox.sizeY) == 1){
 			goBackBox.color = highlightedMenuBarColor;
 		}
+		else if(touch.px != 0 && touch.py != 0){
+			goBackBox.color = menuBarColor;
+			scrollBar.color = highlightedMenuBarColor;
+		}
 		else{
 			goBackBox.color = menuBarColor;
+			scrollBar.color = menuBarColor;
 		}
+
+		//move the crap if the player is touching the display
+		if(touch.px != 0 && touch.py != 0){
+			if(lastPos[0] != 0 && lastPos[1] != 0){
+				scrollBar.y += lastPos[1] - touch.py;
+			}
+		}
+
+		//limit the scroll bar movement
+		if(scrollBar.y < 20+scrollBar.sizeY/2){
+			scrollBar.y = 20+scrollBar.sizeY/2;
+		}
+		else if(scrollBar.y > BOT_SCREEN_HEIGHT-20-scrollBar.sizeY/2){
+			scrollBar.y = BOT_SCREEN_HEIGHT-20-scrollBar.sizeY/2;
+		}
+		
+		//have to do this to make buttons glow nicely in this function
+		lastPos[0] = touch.px;
+		lastPos[1] = touch.py;
 
 		//draw the scores
 		#ifndef TOP_DEBUG_MODE
@@ -164,7 +181,9 @@ void showTheScoreBoard(C3D_RenderTarget* topScreenTarget, C3D_RenderTarget* botS
 		Sprite* sprite = &sprites[6];
 		C2D_SpriteSetPos(&sprite->spr,TOP_SCREEN_WIDTH/2,TOP_SCREEN_HEIGHT/2);
 		C2D_DrawSprite(&sprites[6].spr);
-
+		#endif
+		
+		#ifndef BOTTOM_DEBUG_MODE
 		C2D_SceneBegin(botScreenTarget);
 		//draw a cool background but on the bottom screen
 		sprite = &sprites[1];
@@ -172,13 +191,34 @@ void showTheScoreBoard(C3D_RenderTarget* topScreenTarget, C3D_RenderTarget* botS
 		C2D_DrawSprite(&sprites[1].spr);
 
 		//draw a menu box
-		C2D_DrawRectSolid(goBackBox.x,goBackBox.y,0,goBackBox.sizeX,goBackBox.sizeY,goBackBox.color);
+		C2D_DrawRectSolid(goBackBox.x-goBackBox.sizeX/2,goBackBox.y-goBackBox.sizeY/2,0,goBackBox.sizeX,goBackBox.sizeY,goBackBox.color);
 
 		//draw a arrow that gets you back
 		sprite = &sprites[7];
 		C2D_SpriteSetPos(&sprite->spr,35/2+5,35/2+5);
 		C2D_DrawSprite(&sprites[7].spr);
 
+		//draw a scroll bar
+		C2D_DrawRectSolid(BOT_SCREEN_WIDTH-20-20,20,0,20,BOT_SCREEN_HEIGHT-20-20,ScrollBackgroundColor);
+		C2D_DrawRectSolid(scrollBar.x-scrollBar.sizeX/2,scrollBar.y-scrollBar.sizeY/2,0,scrollBar.sizeX,scrollBar.sizeY,scrollBar.color);
+
+		//draw the scores!!!
+		C2D_TextBufClear(g_dynamicBuf);
+		C2D_Text dynText;
+		//let's do some hackery!
+		char allScores[64];
+		for (int i = 0; i<=int(score.size()-1) ; i++){
+			//						  scroll bar position        -           / divide so that you only move one tile when scrolling  * multiply by how many tiles do you want to be able to move
+			float calibrationValue = (scrollBar.y-scrollBar.sizeY -20+100/2) / 4 * int(score.size())-10;
+			//draw background for the score text
+			C2D_DrawRectSolid(BOT_SCREEN_WIDTH/2-200/2, i*25+10 - calibrationValue,0,200,20,menuBarColor);
+
+			//text stuff here
+			itoa(score[i],allScores,10);
+			C2D_TextParse(&dynText, g_dynamicBuf, allScores);
+			C2D_TextOptimize(&dynText);
+			C2D_DrawText(&dynText, C2D_AlignCenter, BOT_SCREEN_WIDTH/2, i*25+15 - calibrationValue,0,0.5f,0.5f);
+		}
 		C3D_FrameEnd(0);
 		#endif
 	}
@@ -624,7 +664,7 @@ int main(int argc, char* argv[]) {
 
 		//draw game over screen
 		if(isGameOver){
-			Sprite* sprite = &sprites[0];
+			sprite = &sprites[0];
 			C2D_SpriteSetPos(&sprite->spr,TOP_SCREEN_WIDTH/2,TOP_SCREEN_HEIGHT/2);
 			C2D_DrawSprite(&sprites[0].spr);
 		}
@@ -639,9 +679,9 @@ int main(int argc, char* argv[]) {
 		C2D_SpriteSetPos(&sprite->spr,BOT_SCREEN_WIDTH/2,BOT_SCREEN_HEIGHT/2);
 		C2D_DrawSprite(&sprites[1].spr);
 		//menus
-		C2D_DrawRectSolid(menuBar1.x-200/2,menuBar1.y-20/2,0,menuBar1.sizeX,menuBar1.sizeY,menuBar1.color);
-		C2D_DrawRectSolid(menuBar2.x-200/2,menuBar2.y-20/2,0,menuBar2.sizeX,menuBar2.sizeY,menuBar2.color);
-		C2D_DrawRectSolid(menuBar3.x-200/2,menuBar3.y-20/2,0,menuBar3.sizeX,menuBar3.sizeY,menuBar3.color);
+		C2D_DrawRectSolid(menuBar1.x-menuBar1.sizeX/2,menuBar1.y-menuBar1.sizeY/2,0,menuBar1.sizeX,menuBar1.sizeY,menuBar1.color);
+		C2D_DrawRectSolid(menuBar2.x-menuBar2.sizeX/2,menuBar2.y-menuBar2.sizeY/2,0,menuBar2.sizeX,menuBar2.sizeY,menuBar2.color);
+		C2D_DrawRectSolid(menuBar3.x-menuBar3.sizeX/2,menuBar3.y-menuBar3.sizeY/2,0,menuBar3.sizeX,menuBar3.sizeY,menuBar3.color);
 		//menu text
 		C2D_DrawText(&myText[0], C2D_AlignCenter, menuBar1.x,menuBar1.y-20/3, 0.5f, 0.5f, 0.5f);
 		C2D_DrawText(&myText[1], C2D_AlignCenter, menuBar2.x,menuBar2.y-20/3, 0.5f, 0.5f, 0.5f);
