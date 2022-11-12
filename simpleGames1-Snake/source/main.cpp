@@ -35,6 +35,7 @@ int GRID_SIZE = 10;
 float gameSpeed = 0.1;
 bool isGameOver = false;
 bool isTheWallModeOn = false;
+bool isSimpleGraphicsSet = false;
 int enemyPos[2] = {rand()%TOP_SCREEN_WIDTH/GRID_SIZE,rand()%TOP_SCREEN_HEIGHT/GRID_SIZE};
 int snakeHeading = 0;
 int snakeHeadingBuffer = 0;
@@ -45,6 +46,10 @@ std::vector<int> score= {0};
 struct{int x=BOT_SCREEN_WIDTH/2;int y=BOT_SCREEN_HEIGHT/2     ;int sizeX=200;int sizeY=20;u32 color;}menuBar1;
 struct{int x=BOT_SCREEN_WIDTH/2;int y=BOT_SCREEN_HEIGHT/2+20*2;int sizeX=200;int sizeY=20;u32 color;}menuBar2;
 struct{int x=BOT_SCREEN_WIDTH/2;int y=BOT_SCREEN_HEIGHT/2+20*4;int sizeX=200;int sizeY=20;u32 color;}menuBar3;
+struct{int x=35/2+5;int y=35/2+5;int sizeX=35;int sizeY=35;u32 color;}goBackBox;
+
+struct toggle{int x; int y; int sizeX = 200; int sizeY = 20; u32 color; bool toggled = false;};
+struct slider{int x; int y; int sizeX = 200; int sizeY = 20; int barSizeX = 50; int barSizeY = 20; u32 color; u32 barColor; float value = 10; bool isItTouched = false; float minValue = 1; float maxValue = 60;};
 
 std::vector<std::vector<int>> snakeBodyPos = 
 {
@@ -53,15 +58,21 @@ std::vector<std::vector<int>> snakeBodyPos =
 	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2}
 };
 
+
+
 // Create colors
-u32 clrClear   = 			C2D_Color32(0xFF, 0xF0, 0xFF, 0xFF);
-u32 menuBarColor=			C2D_Color32(0xB3, 0xB3, 0x83, 0xFF);
+u32 clrClear   			   =C2D_Color32(0xFF, 0xF0, 0xFF, 0xFF);
+u32 menuBarColor		   =C2D_Color32(0xB3, 0xB3, 0x83, 0xFF);
 u32 highlightedMenuBarColor=C2D_Color32(0x93, 0x93, 0x53, 0xFF);
 u32 ScrollBackgroundColor  =C2D_Color32(0x29, 0x29, 0x13, 0xFF);
+u32 toggledColor           =C2D_Color32(0x40, 0x40, 0xB0, 0xFF);
+u32 wallColor 			   =C2D_Color32(0xFF, 0x10, 0x10, 0xFF);
+u32 enemyColor			   =C2D_Color32(0x00, 0xFF, 0x00, 0xFF);
+u32 snakeColor			   =C2D_Color32(0x00, 0x00, 0xFF, 0xFF);
 
 //create text (why does citro make me do this?)
 C2D_TextBuf g_staticBuf, g_dynamicBuf;
-C2D_Text myText[4];
+C2D_Text myText[6];
 
 void exitTheGame(){
 	// Deinit libs
@@ -95,12 +106,19 @@ static void initText(){
 	C2D_TextParse(&myText[2], g_staticBuf, "Options");
 	//pause screen
 	C2D_TextParse(&myText[3], g_staticBuf, "Pause");
+	//DIFERENT OPTIONS
+	//toggle wall mode
+	C2D_TextParse(&myText[4], g_staticBuf, "wall mode toggle");
+	//toggle simple graphics
+	C2D_TextParse(&myText[5], g_staticBuf, "simple graphics");
 
 	// Optimize the static text strings
 	C2D_TextOptimize(&myText[0]);
 	C2D_TextOptimize(&myText[1]);
 	C2D_TextOptimize(&myText[2]);
 	C2D_TextOptimize(&myText[3]);
+	C2D_TextOptimize(&myText[4]);
+	C2D_TextOptimize(&myText[5]);
 }
 
 void pauseTheGame(C3D_RenderTarget* topScreenTarget, C3D_RenderTarget* botScreenTarget){
@@ -125,17 +143,11 @@ void pauseTheGame(C3D_RenderTarget* topScreenTarget, C3D_RenderTarget* botScreen
 }
 
 void showTheScoreBoard(C3D_RenderTarget* topScreenTarget, C3D_RenderTarget* botScreenTarget){
-	struct{int x=35/2+5;int y=35/2+5;int sizeX=35;int sizeY=35;u32 color;}goBackBox;
 	struct{int x=BOT_SCREEN_WIDTH-20-20/2;int y=20+100/2;int sizeX=20;int sizeY=100;u32 color = menuBarColor;}scrollBar;
 	while (aptMainLoop()){
 		//handle input
 		hidScanInput();
 		hidTouchRead(&touch);
-
-		u32 kDown = hidKeysDown();
-		if (kDown & KEY_START){
-			break;
-		}
 
 		if(isScreenButtonPressed(goBackBox.x,goBackBox.y,goBackBox.sizeX,goBackBox.sizeY) == 2){
 			break;
@@ -219,6 +231,204 @@ void showTheScoreBoard(C3D_RenderTarget* topScreenTarget, C3D_RenderTarget* botS
 			C2D_TextOptimize(&dynText);
 			C2D_DrawText(&dynText, C2D_AlignCenter, BOT_SCREEN_WIDTH/2, i*25+15 - calibrationValue,0,0.5f,0.5f);
 		}
+		C3D_FrameEnd(0);
+		#endif
+	}
+}
+
+void showOptions(C3D_RenderTarget* topScreenTarget, C3D_RenderTarget* botScreenTarget){
+	toggle wallModeOption;
+	slider gridSizeManipulator;
+	slider speedManipulator;
+	toggle simpleGraphics;
+
+	wallModeOption.x = BOT_SCREEN_WIDTH/2;
+	wallModeOption.y = BOT_SCREEN_HEIGHT/2-30;
+	gridSizeManipulator.x = BOT_SCREEN_WIDTH/2;
+	gridSizeManipulator.y = BOT_SCREEN_HEIGHT/2;
+	gridSizeManipulator.color = ScrollBackgroundColor;
+	gridSizeManipulator.barColor = menuBarColor;
+	speedManipulator.x = BOT_SCREEN_WIDTH/2;
+	speedManipulator.y = BOT_SCREEN_HEIGHT/2+30;
+	speedManipulator.color = ScrollBackgroundColor;
+	speedManipulator.barColor = menuBarColor;
+	speedManipulator.minValue = 0.001;
+	speedManipulator.maxValue = 1;
+	simpleGraphics.x = BOT_SCREEN_WIDTH/2;
+	simpleGraphics.y = BOT_SCREEN_HEIGHT/2+60;
+
+	//sets the correct value after returing to settings
+	wallModeOption.toggled = isTheWallModeOn;
+	gridSizeManipulator.value = float(GRID_SIZE);
+	speedManipulator.value = gameSpeed;
+	simpleGraphics.toggled = isSimpleGraphicsSet;
+
+	while (aptMainLoop()){
+		//handle input
+		hidScanInput();
+		hidTouchRead(&touch);
+
+		//go back button stuff
+		if(isScreenButtonPressed(goBackBox.x,goBackBox.y,goBackBox.sizeX,goBackBox.sizeY) == 2){
+			isTheWallModeOn = wallModeOption.toggled;
+			GRID_SIZE = gridSizeManipulator.value;
+			gameSpeed = speedManipulator.value;
+			isSimpleGraphicsSet = simpleGraphics.toggled;
+			break;
+		}
+		else if(isScreenButtonPressed(goBackBox.x,goBackBox.y,goBackBox.sizeX,goBackBox.sizeY) == 1){
+			goBackBox.color = highlightedMenuBarColor;
+		}
+		else{
+			goBackBox.color = menuBarColor;
+		}
+
+		//size manipulator stuff
+		if(isScreenButtonPressed(gridSizeManipulator.x,gridSizeManipulator.y,gridSizeManipulator.sizeX,gridSizeManipulator.sizeY) == 2){
+			gridSizeManipulator.isItTouched = true;
+		}
+		if(isScreenButtonPressed(gridSizeManipulator.x,gridSizeManipulator.y,gridSizeManipulator.sizeX,gridSizeManipulator.sizeY) == 1 || gridSizeManipulator.isItTouched){
+			gridSizeManipulator.barColor = highlightedMenuBarColor;
+		}
+		else{
+			gridSizeManipulator.barColor = menuBarColor;
+		}
+
+		//move the bar when user is touching it
+		if(gridSizeManipulator.isItTouched){
+			if(touch.px == 0 && touch.py == 0){
+				gridSizeManipulator.isItTouched = false;
+			}
+			else{
+				if(lastPos[0] != 0 && lastPos[1] != 0){
+					//move the bar when it's touched 
+					gridSizeManipulator.value -= (lastPos[0] - touch.px)/3;
+				}
+			}
+		}
+
+		//speed manipulator stuff
+		if(isScreenButtonPressed(speedManipulator.x,speedManipulator.y,speedManipulator.sizeX,speedManipulator.sizeY) == 2){
+			speedManipulator.isItTouched = true;
+		}
+		if(isScreenButtonPressed(speedManipulator.x,speedManipulator.y,speedManipulator.sizeX,speedManipulator.sizeY) == 1 || speedManipulator.isItTouched){
+			speedManipulator.barColor = highlightedMenuBarColor;
+		}
+		else{
+			speedManipulator.barColor = menuBarColor;
+		}
+		//move the bar when user is touching it
+		if(speedManipulator.isItTouched){
+			if(touch.px == 0 && touch.py == 0){
+				speedManipulator.isItTouched = false;
+			}
+			else{
+				if(lastPos[0] != 0 && lastPos[1] != 0){
+					//move the bar when it's touched 
+					speedManipulator.value -= (lastPos[0] - touch.px)/3;
+				}
+			}
+		}
+
+		//limit the scroll bar movement for the speed manipulator
+		if(speedManipulator.value < speedManipulator.minValue){
+			speedManipulator.value = speedManipulator.minValue;
+		}
+		else if(speedManipulator.value > speedManipulator.maxValue){
+			speedManipulator.value = speedManipulator.maxValue;
+		}
+		//limit the scroll bar movement for the grid size manipulator
+		if(gridSizeManipulator.value < gridSizeManipulator.minValue){
+			gridSizeManipulator.value = gridSizeManipulator.minValue;
+		}
+		else if(gridSizeManipulator.value > gridSizeManipulator.maxValue){
+			gridSizeManipulator.value = gridSizeManipulator.maxValue;
+		}
+
+		//toggle wall mode button
+		if(isScreenButtonPressed(wallModeOption.x,wallModeOption.y,wallModeOption.sizeX,wallModeOption.sizeY) == 2){
+			wallModeOption.toggled = !wallModeOption.toggled;
+		}
+		if(wallModeOption.toggled){
+			wallModeOption.color = toggledColor;
+		}
+		else if(!wallModeOption.toggled){
+			wallModeOption.color = highlightedMenuBarColor;
+		}
+		//toggle simple graphics button
+		if(isScreenButtonPressed(simpleGraphics.x,simpleGraphics.y,simpleGraphics.sizeX,simpleGraphics.sizeY) == 2){
+			simpleGraphics.toggled = !simpleGraphics.toggled;
+		}
+		if(simpleGraphics.toggled){
+			simpleGraphics.color = toggledColor;
+		}
+		else if(!simpleGraphics.toggled){
+			simpleGraphics.color = highlightedMenuBarColor;
+		}
+		
+		//have to do this to make buttons glow nicely in this function
+		lastPos[0] = touch.px;
+		lastPos[1] = touch.py;
+
+		#ifndef TOP_DEBUG_MODE
+		C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
+		C2D_TargetClear(topScreenTarget, clrClear);
+		C2D_TargetClear(botScreenTarget, clrClear);
+		C2D_SceneBegin(topScreenTarget);
+
+		//draw the cool background
+		sprite = &sprites[6];
+		C2D_SpriteSetPos(&sprite->spr,TOP_SCREEN_WIDTH/2,TOP_SCREEN_HEIGHT/2);
+		C2D_DrawSprite(&sprites[6].spr);
+		#endif
+		
+		#ifndef BOTTOM_DEBUG_MODE
+		C2D_SceneBegin(botScreenTarget);
+
+		//draw the lower background
+		sprite = &sprites[1];
+		C2D_SpriteSetPos(&sprite->spr,BOT_SCREEN_WIDTH/2,BOT_SCREEN_HEIGHT/2);
+		C2D_DrawSprite(&sprites[1].spr);
+
+		//draw go back option
+		C2D_DrawRectSolid(goBackBox.x-goBackBox.sizeX/2,goBackBox.y-goBackBox.sizeY/2,0, goBackBox.sizeX,goBackBox.sizeY, goBackBox.color);
+		sprite = &sprites[7];
+		C2D_SpriteSetPos(&sprite->spr,35/2+5,35/2+5);
+		C2D_DrawSprite(&sprites[7].spr);
+
+		//draw the wall mode option
+		C2D_DrawRectSolid(wallModeOption.x-wallModeOption.sizeX/2,wallModeOption.y-wallModeOption.sizeY/2,0, wallModeOption.sizeX,wallModeOption.sizeY, wallModeOption.color);
+		C2D_DrawText(&myText[4], C2D_AlignCenter, wallModeOption.x, wallModeOption.y-5, 0.5f, 0.5f, 0.5f);
+
+		//draw the grid size slider
+		C2D_DrawRectSolid(gridSizeManipulator.x-gridSizeManipulator.sizeX/2,gridSizeManipulator.y-gridSizeManipulator.sizeY/2,0, gridSizeManipulator.sizeX,gridSizeManipulator.sizeY, gridSizeManipulator.color);
+		C2D_DrawRectSolid(gridSizeManipulator.x-gridSizeManipulator.sizeX/2+ (((gridSizeManipulator.value-gridSizeManipulator.minValue) / gridSizeManipulator.maxValue ) * (gridSizeManipulator.sizeX-gridSizeManipulator.barSizeX+3)),  gridSizeManipulator.y-gridSizeManipulator.sizeY/2,0, gridSizeManipulator.barSizeX,gridSizeManipulator.barSizeY, gridSizeManipulator.barColor);
+		
+		C2D_TextBufClear(g_dynamicBuf);
+		C2D_Text dynText;
+		//let's do some hackery!
+		char gridSizeInText[3];
+		itoa(gridSizeManipulator.value,gridSizeInText,10);//<<this is some bullcrap!! But at least it works.
+		C2D_TextParse(&dynText, g_dynamicBuf, gridSizeInText);
+		C2D_TextOptimize(&dynText);
+		C2D_DrawText(&dynText, C2D_AlignLeft, gridSizeManipulator.x-gridSizeManipulator.sizeX/2+15 + (((gridSizeManipulator.value-gridSizeManipulator.minValue) / gridSizeManipulator.maxValue ) * (gridSizeManipulator.sizeX-gridSizeManipulator.barSizeX+3)),gridSizeManipulator.y-5,0,0.5f,0.5f);
+
+		//draw the speed manipulator
+		C2D_DrawRectSolid(speedManipulator.x-speedManipulator.sizeX/2,speedManipulator.y-speedManipulator.sizeY/2,0, speedManipulator.sizeX,speedManipulator.sizeY, speedManipulator.color);
+		C2D_DrawRectSolid(speedManipulator.x-speedManipulator.sizeX/2+ (((speedManipulator.value-speedManipulator.minValue) / speedManipulator.maxValue ) * (speedManipulator.sizeX-speedManipulator.barSizeX+3)),  speedManipulator.y-speedManipulator.sizeY/2,0, speedManipulator.barSizeX,speedManipulator.barSizeY, speedManipulator.barColor);
+		
+		C2D_TextBufClear(g_dynamicBuf);
+		//let's do some hackery!
+		char speedInText[3];
+		itoa(speedManipulator.value,speedInText,10);//<<this is some bullcrap!! But at least it works.
+		C2D_TextParse(&dynText, g_dynamicBuf, speedInText);
+		C2D_TextOptimize(&dynText);
+		C2D_DrawText(&dynText, C2D_AlignLeft, speedManipulator.x-speedManipulator.sizeX/2+15 + (((speedManipulator.value-speedManipulator.minValue) / speedManipulator.maxValue ) * (speedManipulator.sizeX-speedManipulator.barSizeX+3)),speedManipulator.y-5,0,0.5f,0.5f);
+
+		//draw the toggle simple graphics button
+		C2D_DrawRectSolid(simpleGraphics.x-simpleGraphics.sizeX/2,simpleGraphics.y-simpleGraphics.sizeY/2,0, simpleGraphics.sizeX,simpleGraphics.sizeY, simpleGraphics.color);
+		C2D_DrawText(&myText[5], C2D_AlignCenter, simpleGraphics.x, simpleGraphics.y-5, 0.5f, 0.5f, 0.5f);
+
 		C3D_FrameEnd(0);
 		#endif
 	}
@@ -349,7 +559,7 @@ void handleScreenInput(C3D_RenderTarget* topScreenTarget, C3D_RenderTarget* botS
 	//options button
 	//on press
 	if(isScreenButtonPressed(menuBar3.x,menuBar3.y,menuBar3.sizeX,menuBar3.sizeY) == 2){
-		restartTheGame();
+		showOptions(topScreenTarget,botScreenTarget);
 	}
 	//on hover
 	else if(isScreenButtonPressed(menuBar3.x,menuBar3.y,menuBar3.sizeX,menuBar3.sizeY) == 1){
@@ -451,18 +661,20 @@ int main(int argc, char* argv[]) {
 				snakeHeadingBuffer = 0;
 			}
 
-			//teleport the snake to the other side when is goes through the screen border
-			if(snakeBodyPos[0][0]>=TOP_SCREEN_WIDTH/GRID_SIZE){
-				snakeBodyPos[0][0] = 0;
-			}
-			else if(snakeBodyPos[0][1]>=TOP_SCREEN_HEIGHT/GRID_SIZE){
-				snakeBodyPos[0][1] = 0;
-			}
-			else if(snakeBodyPos[0][0]<0){
-				snakeBodyPos[0][0] = TOP_SCREEN_WIDTH/GRID_SIZE-1;
-			}
-			else if(snakeBodyPos[0][1]<0){
-				snakeBodyPos[0][1] = TOP_SCREEN_HEIGHT/GRID_SIZE-1;
+			if(!isTheWallModeOn){
+				//teleport the snake to the other side when is goes through the screen border
+				if(snakeBodyPos[0][0]>=TOP_SCREEN_WIDTH/GRID_SIZE){
+					snakeBodyPos[0][0] = 0;
+				}
+				else if(snakeBodyPos[0][1]>=TOP_SCREEN_HEIGHT/GRID_SIZE){
+					snakeBodyPos[0][1] = 0;
+				}
+				else if(snakeBodyPos[0][0]<0){
+					snakeBodyPos[0][0] = TOP_SCREEN_WIDTH/GRID_SIZE-1;
+				}
+				else if(snakeBodyPos[0][1]<0){
+					snakeBodyPos[0][1] = TOP_SCREEN_HEIGHT/GRID_SIZE-1;
+				}
 			}
 			
 			//add a body part if it colides with an enemy
@@ -488,6 +700,12 @@ int main(int argc, char* argv[]) {
 						isGameOver = true;
 					}
 				}
+				//check if it's colliding with a wall
+				if(isTheWallModeOn){
+					if(snakeBodyPos[0][0] >= TOP_SCREEN_WIDTH/GRID_SIZE || snakeBodyPos[0][0] < 0 || snakeBodyPos[0][1] >= TOP_SCREEN_HEIGHT/GRID_SIZE || snakeBodyPos[0][1] < 0){
+						isGameOver = true;
+					}
+				}
 			}
 		}
 		// Render the scene
@@ -501,157 +719,176 @@ int main(int argc, char* argv[]) {
 		#ifndef TOP_DEBUG_MODE
 		C2D_SceneBegin(top);
 
-		//draw background 
-		Sprite* sprite = &sprites[10];
-		C2D_SpriteSetPos(&sprite->spr,TOP_SCREEN_WIDTH/2,TOP_SCREEN_HEIGHT/2);
-		C2D_DrawSprite(&sprites[10].spr);
+		if(!isSimpleGraphicsSet){
+			//draw background 
+			Sprite* sprite = &sprites[10];
+			C2D_SpriteSetPos(&sprite->spr,TOP_SCREEN_WIDTH/2,TOP_SCREEN_HEIGHT/2);
+			C2D_DrawSprite(&sprites[10].spr);
+		}
+
+		//draw the walls
+		if(isTheWallModeOn){
+			C2D_DrawRectSolid(0,0,0,2,TOP_SCREEN_HEIGHT,wallColor);
+			C2D_DrawRectSolid(0,0,0,TOP_SCREEN_WIDTH,2,wallColor);
+			C2D_DrawRectSolid(TOP_SCREEN_WIDTH-2,0,0,2,TOP_SCREEN_HEIGHT,wallColor);
+			C2D_DrawRectSolid(0,TOP_SCREEN_HEIGHT-2,0,TOP_SCREEN_WIDTH,2,wallColor);
+		}
 
 		//draw snake body
 		for(int i = snakeBodyPos.size()-1;i>=0;i = i-1){
-			/*
-				head sprite = 2
-				body sprite = 3
-				tail sprite = 4
-				turningLeft = 5
-				turningRight= 8
-			*/
-			int whichSprite;
-			if(i==0){
-				whichSprite = 2;
-			}
-			else if(i== int(snakeBodyPos.size()-1)){
-				whichSprite = 4;
-			}
-			else{
-				whichSprite = 3;
-			}
-			Sprite* sprite = &sprites[whichSprite];
-			
-
-			//change the sprite if it's the corner---------
-			if(i != 0 && i != int(snakeBodyPos.size()-1)){
-				//check if the next body part is on the left
-				if (snakeBodyPos[i-1][0] == snakeBodyPos[i][0]-1){
-					//check if the previous body part is above
-					if(snakeBodyPos[i+1][1] == snakeBodyPos[i][1]-1){
-						whichSprite = 8;
-						sprite = &sprites[whichSprite];
-						C2D_SpriteSetRotation(&sprite->spr,PI/2);
-					}
-					//check if the previous body part is bellow
-					else if(snakeBodyPos[i+1][1] == snakeBodyPos[i][1]+1){
-						whichSprite = 5;
-						sprite = &sprites[whichSprite];
-						C2D_SpriteSetRotation(&sprite->spr,0);
-					}
+			if(!isSimpleGraphicsSet){
+				/*
+					head sprite = 2
+					body sprite = 3
+					tail sprite = 4
+					turningLeft = 5
+					turningRight= 8
+				*/
+				int whichSprite;
+				if(i==0){
+					whichSprite = 2;
 				}
-				//check if the next body part is on the right
-				if (snakeBodyPos[i-1][0] == snakeBodyPos[i][0]+1){
-					//check if the previous body part is above
-					if(snakeBodyPos[i+1][1] == snakeBodyPos[i][1]-1){
-						whichSprite = 5;
-						sprite = &sprites[whichSprite];
-						C2D_SpriteSetRotation(&sprite->spr,PI);
-					}
-					//check if the previous body part is bellow
-					else if(snakeBodyPos[i+1][1] == snakeBodyPos[i][1]+1){
-						whichSprite = 8;
-						sprite = &sprites[whichSprite];
-						C2D_SpriteSetRotation(&sprite->spr,PI/2*3);
-					}
-				}
-				//check if the next body part is above
-				if (snakeBodyPos[i-1][1] == snakeBodyPos[i][1]-1){
-					//check if the previous body part is on the left
-					if(snakeBodyPos[i+1][0] == snakeBodyPos[i][0]-1){
-						whichSprite = 5;
-						sprite = &sprites[whichSprite];
-						C2D_SpriteSetRotation(&sprite->spr,PI/2);
-					}
-					//check if the previous body part is on the right
-					else if(snakeBodyPos[i+1][0] == snakeBodyPos[i][0]+1){
-						whichSprite = 8;
-						sprite = &sprites[whichSprite];
-						C2D_SpriteSetRotation(&sprite->spr,PI);
-					}
-				}
-				//check if the next body part is bellow
-				if (snakeBodyPos[i-1][1] == snakeBodyPos[i][1]+1){
-					//check if the previous body part is on the left
-					if(snakeBodyPos[i+1][0] == snakeBodyPos[i][0]-1){
-						whichSprite = 8;
-						sprite = &sprites[whichSprite];
-						C2D_SpriteSetRotation(&sprite->spr,0);
-					}
-					//check if the previous body part is on the right
-					else if(snakeBodyPos[i+1][0] == snakeBodyPos[i][0]+1){
-						whichSprite = 5;
-						sprite = &sprites[whichSprite];
-						C2D_SpriteSetRotation(&sprite->spr,PI/2*3);
-					}
-				}
-				//skip a chunck of code if this body part is a turing one
-				if (whichSprite == 5 || whichSprite == 8){
-					goto skipChangingTheBodyRotationStep;
-				}
-			}
-
-			//change the body parts direction
-			if(i != 0){
-				//check if next body part is on the left OR this body part is on the left border AND next body part is on the other side of the border
-				if	   (snakeBodyPos[i-1][0] == snakeBodyPos[i][0]-1 || (snakeBodyPos[i][0] - 1 <= 0 && snakeBodyPos[i+1][1] == snakeBodyPos[i][1])){
-					C2D_SpriteSetRotation(&sprite->spr,PI/2*3);
-				}
-				//check if next body part is on the right
-				else if(snakeBodyPos[i-1][0] == snakeBodyPos[i][0]+1 || (snakeBodyPos[i][0] + 1 >= TOP_SCREEN_WIDTH/GRID_SIZE && snakeBodyPos[i+1][1] == snakeBodyPos[i][1])){
-					C2D_SpriteSetRotation(&sprite->spr,PI/2);
-				}
-				//check if next body part is on the top
-				else if(snakeBodyPos[i-1][1] == snakeBodyPos[i][1]-1 || (snakeBodyPos[i][1] - 1 <= 0 && snakeBodyPos[i+1][0] == snakeBodyPos[i][0])){
-					C2D_SpriteSetRotation(&sprite->spr,0);
-				}
-				//check if next body part is on the bottom
-				else if(snakeBodyPos[i-1][1] == snakeBodyPos[i][1]+1 || (snakeBodyPos[i][1] + 1 >= TOP_SCREEN_HEIGHT/GRID_SIZE  && snakeBodyPos[i+1][0] == snakeBodyPos[i][0])){
-					C2D_SpriteSetRotation(&sprite->spr,PI);
+				else if(i== int(snakeBodyPos.size()-1)){
+					whichSprite = 4;
 				}
 				else{
-					C2D_SpriteSetRotation(&sprite->spr,PI/4);
-					//this rotation is set if the snake doesn't know where the next body part is...
+					whichSprite = 3;
 				}
-			}
-			//change the head direction
-			else{
-				if(elapsed > gameSpeed && isGameOver==false){
-					//check if next body part is on the left
-					if(snakeHeading==3){
+				Sprite* sprite = &sprites[whichSprite];
+				
+				//change the sprite if it's the corner---------
+				if(i != 0 && i != int(snakeBodyPos.size()-1)){
+					//check if the next body part is on the left
+					if (snakeBodyPos[i-1][0] == snakeBodyPos[i][0]-1){
+						//check if the previous body part is above
+						if(snakeBodyPos[i+1][1] == snakeBodyPos[i][1]-1){
+							whichSprite = 8;
+							sprite = &sprites[whichSprite];
+							C2D_SpriteSetRotation(&sprite->spr,PI/2);
+						}
+						//check if the previous body part is bellow
+						else if(snakeBodyPos[i+1][1] == snakeBodyPos[i][1]+1){
+							whichSprite = 5;
+							sprite = &sprites[whichSprite];
+							C2D_SpriteSetRotation(&sprite->spr,0);
+						}
+					}
+					//check if the next body part is on the right
+					if (snakeBodyPos[i-1][0] == snakeBodyPos[i][0]+1){
+						//check if the previous body part is above
+						if(snakeBodyPos[i+1][1] == snakeBodyPos[i][1]-1){
+							whichSprite = 5;
+							sprite = &sprites[whichSprite];
+							C2D_SpriteSetRotation(&sprite->spr,PI);
+						}
+						//check if the previous body part is bellow
+						else if(snakeBodyPos[i+1][1] == snakeBodyPos[i][1]+1){
+							whichSprite = 8;
+							sprite = &sprites[whichSprite];
+							C2D_SpriteSetRotation(&sprite->spr,PI/2*3);
+						}
+					}
+					//check if the next body part is above
+					if (snakeBodyPos[i-1][1] == snakeBodyPos[i][1]-1){
+						//check if the previous body part is on the left
+						if(snakeBodyPos[i+1][0] == snakeBodyPos[i][0]-1){
+							whichSprite = 5;
+							sprite = &sprites[whichSprite];
+							C2D_SpriteSetRotation(&sprite->spr,PI/2);
+						}
+						//check if the previous body part is on the right
+						else if(snakeBodyPos[i+1][0] == snakeBodyPos[i][0]+1){
+							whichSprite = 8;
+							sprite = &sprites[whichSprite];
+							C2D_SpriteSetRotation(&sprite->spr,PI);
+						}
+					}
+					//check if the next body part is bellow
+					if (snakeBodyPos[i-1][1] == snakeBodyPos[i][1]+1){
+						//check if the previous body part is on the left
+						if(snakeBodyPos[i+1][0] == snakeBodyPos[i][0]-1){
+							whichSprite = 8;
+							sprite = &sprites[whichSprite];
+							C2D_SpriteSetRotation(&sprite->spr,0);
+						}
+						//check if the previous body part is on the right
+						else if(snakeBodyPos[i+1][0] == snakeBodyPos[i][0]+1){
+							whichSprite = 5;
+							sprite = &sprites[whichSprite];
+							C2D_SpriteSetRotation(&sprite->spr,PI/2*3);
+						}
+					}
+					//skip a chunck of code if this body part is a turing one
+					if (whichSprite == 5 || whichSprite == 8){
+						goto skipChangingTheBodyRotationStep;
+					}
+				}
+
+				//change the body parts direction
+				if(i != 0){
+					//check if next body part is on the left OR this body part is on the left border AND next body part is on the other side of the border
+					if	   (snakeBodyPos[i-1][0] == snakeBodyPos[i][0]-1 || (snakeBodyPos[i][0] - 1 <= 0 && snakeBodyPos[i+1][1] == snakeBodyPos[i][1])){
 						C2D_SpriteSetRotation(&sprite->spr,PI/2*3);
 					}
 					//check if next body part is on the right
-					else if(snakeHeading==4){
-						C2D_SpriteSetRotation(&sprite->spr,PI/2*1);
+					else if(snakeBodyPos[i-1][0] == snakeBodyPos[i][0]+1 || (snakeBodyPos[i][0] + 1 >= TOP_SCREEN_WIDTH/GRID_SIZE && snakeBodyPos[i+1][1] == snakeBodyPos[i][1])){
+						C2D_SpriteSetRotation(&sprite->spr,PI/2);
 					}
 					//check if next body part is on the top
-					else if(snakeHeading==1){
+					else if(snakeBodyPos[i-1][1] == snakeBodyPos[i][1]-1 || (snakeBodyPos[i][1] - 1 <= 0 && snakeBodyPos[i+1][0] == snakeBodyPos[i][0])){
 						C2D_SpriteSetRotation(&sprite->spr,0);
 					}
 					//check if next body part is on the bottom
-					else if(snakeHeading==2){
-						C2D_SpriteSetRotation(&sprite->spr,PI/2*2);
+					else if(snakeBodyPos[i-1][1] == snakeBodyPos[i][1]+1 || (snakeBodyPos[i][1] + 1 >= TOP_SCREEN_HEIGHT/GRID_SIZE  && snakeBodyPos[i+1][0] == snakeBodyPos[i][0])){
+						C2D_SpriteSetRotation(&sprite->spr,PI);
 					}
 					else{
-						C2D_SpriteSetRotation(&sprite->spr,0);
+						C2D_SpriteSetRotation(&sprite->spr,PI/4);
+						//this rotation is set if the snake doesn't know where the next body part is...
 					}
 				}
+				//change the head direction
+				else{
+					if(elapsed > gameSpeed && isGameOver==false){
+						//check if next body part is on the left
+						if(snakeHeading==3){
+							C2D_SpriteSetRotation(&sprite->spr,PI/2*3);
+						}
+						//check if next body part is on the right
+						else if(snakeHeading==4){
+							C2D_SpriteSetRotation(&sprite->spr,PI/2*1);
+						}
+						//check if next body part is on the top
+						else if(snakeHeading==1){
+							C2D_SpriteSetRotation(&sprite->spr,0);
+						}
+						//check if next body part is on the bottom
+						else if(snakeHeading==2){
+							C2D_SpriteSetRotation(&sprite->spr,PI/2*2);
+						}
+						else{
+							C2D_SpriteSetRotation(&sprite->spr,0);
+						}
+					}
+				}
+				skipChangingTheBodyRotationStep:
+				C2D_SpriteSetScale(&sprite->spr,GRID_SIZE/10,GRID_SIZE/10);
+				C2D_SpriteSetPos(&sprite->spr,snakeBodyPos[i][0]*GRID_SIZE+GRID_SIZE/2,snakeBodyPos[i][1]*GRID_SIZE+GRID_SIZE/2);
+				C2D_DrawSprite(&sprites[whichSprite].spr);
 			}
-			skipChangingTheBodyRotationStep:
-			C2D_SpriteSetScale(&sprite->spr,GRID_SIZE/10,GRID_SIZE/10);
-			C2D_SpriteSetPos(&sprite->spr,snakeBodyPos[i][0]*GRID_SIZE+GRID_SIZE/2,snakeBodyPos[i][1]*GRID_SIZE+GRID_SIZE/2);
-			C2D_DrawSprite(&sprites[whichSprite].spr);
+			else{
+				C2D_DrawRectSolid(snakeBodyPos[i][0]*GRID_SIZE+GRID_SIZE/2,snakeBodyPos[i][1]*GRID_SIZE+GRID_SIZE/2,0,GRID_SIZE,GRID_SIZE,snakeColor);
+			}
 		}
-		//draw the enemy
-		sprite = &sprites[9];
-		C2D_SpriteSetPos(&sprite->spr,enemyPos[0]*GRID_SIZE+GRID_SIZE/2,enemyPos[1]*GRID_SIZE+GRID_SIZE/2);
-		C2D_DrawSprite(&sprites[9].spr);
+		if(!isSimpleGraphicsSet){
+			//draw the enemy
+			sprite = &sprites[9];
+			C2D_SpriteSetPos(&sprite->spr,enemyPos[0]*GRID_SIZE+GRID_SIZE/2,enemyPos[1]*GRID_SIZE+GRID_SIZE/2);
+			C2D_DrawSprite(&sprites[9].spr);
+		}
+		else{
+			C2D_DrawRectSolid(enemyPos[0]*GRID_SIZE+GRID_SIZE/2,enemyPos[1]*GRID_SIZE+GRID_SIZE/2,0,GRID_SIZE,GRID_SIZE,enemyColor);
+		}
 		//draw the scores
 		C2D_TextBufClear(g_dynamicBuf);
 		C2D_Text dynText;

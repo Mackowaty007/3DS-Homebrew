@@ -1,0 +1,2 @@
+lay next
+$DEVKITARM/bin/arm-none-eabi-gdb simpleGames1-Snake.elf
