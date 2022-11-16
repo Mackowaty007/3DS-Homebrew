@@ -683,9 +683,17 @@ int main(int argc, char* argv[]) {
 				score[score.size()-1] ++;
 
 				//generate random enemy pos
+				generateRandomEnemyPos:
 				enemyPos[0] = rand()%TOP_SCREEN_WIDTH /GRID_SIZE;
 				enemyPos[1] = rand()%TOP_SCREEN_HEIGHT/GRID_SIZE;
 				
+				//check if the enemy spawned inside the snake. Get new random position if that's the case
+				for(int snakeSeg = 0; snakeSeg<int(snakeBodyPos.size());snakeSeg++){
+					if (enemyPos[0] == snakeBodyPos[snakeSeg][0] && enemyPos[1] == snakeBodyPos[snakeSeg][1]){
+						goto generateRandomEnemyPos;
+					}
+				}
+
 				//add a new body part
 				snakeBodyPos.push_back(std::vector<int>{
                		snakeBodyPos[snakeBodyPos.size()-1][0] = snakeBodyPos[snakeBodyPos.size()-2][0],
