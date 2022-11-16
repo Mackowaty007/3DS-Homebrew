@@ -13,6 +13,7 @@
 #define BOT_SCREEN_WIDTH 320
 #define BOT_SCREEN_HEIGHT 240
 #define PI 3.1416
+#define SNAKE_DEFAULT_SIZE 3
 
 //#define BOTTOM_DEBUG_MODE
 //#define TOP_DEBUG_MODE
@@ -51,12 +52,8 @@ struct{int x=35/2+5;int y=35/2+5;int sizeX=35;int sizeY=35;u32 color;}goBackBox;
 struct toggle{int x; int y; int sizeX = 200; int sizeY = 20; u32 color; bool toggled = false;};
 struct slider{int x; int y; int sizeX = 200; int sizeY = 20; int barSizeX = 50; int barSizeY = 20; u32 color; u32 barColor; float value = 10; bool isItTouched = false; float minValue = 1; float maxValue = 60;};
 
-std::vector<std::vector<int>> snakeBodyPos = 
-{
-	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
-	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
-	{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2}
-};
+//generate the snake body
+std::vector<std::vector<int>> snakeBodyPos;
 
 
 
@@ -80,6 +77,17 @@ void exitTheGame(){
 	C3D_Fini();
 	gfxExit();
 	romfsExit();
+}
+
+void generateSnakeBody(){
+	//generate the snake body
+	snakeBodyPos = 
+	{
+		{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2}
+	};
+	for (int i=0;i<SNAKE_DEFAULT_SIZE-1;i++){
+		snakeBodyPos.push_back({(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2});
+	}
 }
 
 int isScreenButtonPressed(int x,int y,int sizeX,int sizeY){
@@ -436,11 +444,8 @@ void showOptions(C3D_RenderTarget* topScreenTarget, C3D_RenderTarget* botScreenT
 
 void restartTheGame(){
 	score.push_back(0);
-	snakeBodyPos = {
-		{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
-		{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2},
-		{(TOP_SCREEN_WIDTH/GRID_SIZE)/2  ,(TOP_SCREEN_HEIGHT/GRID_SIZE)/2}
-	};
+	generateSnakeBody();
+
 	//generate random enemy pos
 	enemyPos[0] = rand()%TOP_SCREEN_WIDTH /GRID_SIZE;
 	enemyPos[1] = rand()%TOP_SCREEN_HEIGHT/GRID_SIZE;
@@ -611,6 +616,7 @@ int main(int argc, char* argv[]) {
 	if (!spriteSheet) svcBreak(USERBREAK_PANIC);
 
 	// Initialize sprites and text
+	generateSnakeBody();
 	initSprites();
 	initText();
 	
